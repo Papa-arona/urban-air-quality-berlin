@@ -13,7 +13,7 @@ Berlin's air-quality monitoring network contains urban-background,
 traffic and suburban monitoring stations. These station measurements
 provided the observations used in the spatial analysis.
 
-<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/04515a8b-c7bf-4e24-a875-f61102217956" />
+<img width="1448" height="1086" alt="image" src="https://github.com/user-attachments/assets/fce7da44-c494-4b6a-8111-b1e41e885d37" />
 
 
 ### Daily NO₂ Patterns
@@ -29,14 +29,15 @@ Average daily traffic volumes were analysed across Berlin's road network.
 Traffic measurement nodes were used to connect traffic intensity with the
 air-quality results.
 
-<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/3e736fbe-85bb-4a73-a20d-45d325ceb5d5" />
+<img width="1448" height="1086" alt="image" src="https://github.com/user-attachments/assets/684dfdf7-9c44-4ab5-9c25-828dd829e79e" />
 
 ## Land Use and Land Cover
 
 Land-use information was included to provide additional context for the
 distribution of emissions and urban development across Berlin.
 
-<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/25aeafbb-8e16-4ff0-822f-9f1749aa0021" />
+<img width="1448" height="1086" alt="image" src="https://github.com/user-attachments/assets/edb09b58-9aba-407b-9383-8b32463c5633" />
+
 
 ## Spatial Distribution of NO₂
 
@@ -45,8 +46,7 @@ the monitoring stations. The resulting surface indicates higher estimated
 concentrations in central and traffic-intensive parts of Berlin, with lower
 values toward several peripheral areas.
 
-<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/58d6cecf-c16c-423f-859d-529227a23d45" />
-
+<img width="1448" height="1086" alt="image" src="https://github.com/user-attachments/assets/30262b83-6c42-4892-a558-b7f5ebcabc2b" />
 
 ## Relationship Between Traffic and NO₂
 
@@ -63,5 +63,5 @@ pattern represented by the CAMS atmospheric dataset. The comparison
 illustrates the difference between local monitoring-based estimates and
 regional gridded atmospheric information.
 
-<img width="1126" height="1220" alt="image" src="https://github.com/user-attachments/assets/0884606a-5006-4480-931f-5525ba32643b" />
+<img width="1448" height="1086" alt="image" src="https://github.com/user-attachments/assets/91a101a9-64e4-412f-8e63-b356d1d3b655" />
 

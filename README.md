@@ -1,66 +1,67 @@
 # Urban Air Quality and Mobility in Berlin
 
+
 ## Project Overview
 
-This project investigates the spatial distribution of nitrogen dioxide (NO₂) concentrations across Berlin and evaluates their relationship with urban mobility patterns and land use characteristics.
+This project investigates the spatial distribution of nitrogen dioxide
+(NO₂) concentrations across Berlin and examines the relationship between
+air pollution, road traffic and urban land use.
 
-Using GIS techniques, spatial interpolation, and environmental datasets, the analysis identifies pollution hotspots and explores how traffic intensity influences air quality.
+## Study Area and Monitoring Network
 
----
+Berlin's air-quality monitoring network contains urban-background,
+traffic and suburban monitoring stations. These station measurements
+provided the observations used in the spatial analysis.
 
-## Objectives
-
-- Analyse NO₂ concentration across Berlin
-- Explore relationships between traffic density and pollution
-- Produce spatial interpolation maps
-- Support environmental planning through GIS analysis
-
----
-
-## Study Area
-
-Berlin, Germany
-
----
-
-## Data Sources
-
-- CAMS Air Quality Data
-- OpenStreetMap
-- Traffic datasets
-- Land Use Data
-
----
-
-## Methodology
-
-The workflow included:
-
-1. Literature Review
-   
-Understanding the molecular Geometry of NO₂ and NO
-- <img width="574" height="264" alt="image" src="https://github.com/user-attachments/assets/04d87f56-fdc1-468b-80a1-252d20140b77" />
-Measurement Process
-- <img width="484" height="83" alt="image" src="https://github.com/user-attachments/assets/01687aa8-be9d-4c84-8e2a-67376024d709" />
-
-3. Data collection
+<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/04515a8b-c7bf-4e24-a875-f61102217956" />
 
 
-4. Data preprocessing
-5. Spatial interpolation (IDW)
-6. Traffic density analysis
-7. Overlay analysis
-8. Map production
+### Daily NO₂ Patterns
 
----
+The monitoring stations were grouped into traffic, urban-background and
+outskirts categories to examine differences in the daily NO₂ cycle.
 
-## Tools
+<img width="662" height="410" alt="image" src="https://github.com/user-attachments/assets/12a493af-bcd5-46f1-96d2-f4389f6e073a" />
 
-- QGIS
-- ArcGIS Pro
-- Microsoft Excel
+## Traffic Data
 
-- ## Results
-  
+Average daily traffic volumes were analysed across Berlin's road network.
+Traffic measurement nodes were used to connect traffic intensity with the
+air-quality results.
 
+<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/3e736fbe-85bb-4a73-a20d-45d325ceb5d5" />
+
+## Land Use and Land Cover
+
+Land-use information was included to provide additional context for the
+distribution of emissions and urban development across Berlin.
+
+<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/25aeafbb-8e16-4ff0-822f-9f1749aa0021" />
+
+## Spatial Distribution of NO₂
+
+Inverse Distance Weighting was used to estimate NO₂ concentrations between
+the monitoring stations. The resulting surface indicates higher estimated
+concentrations in central and traffic-intensive parts of Berlin, with lower
+values toward several peripheral areas.
+
+<img width="3507" height="2480" alt="image" src="https://github.com/user-attachments/assets/58d6cecf-c16c-423f-859d-529227a23d45" />
+
+
+## Relationship Between Traffic and NO₂
+
+Estimated average daily vehicle volumes increased across the NO₂
+concentration classes. The fitted relationship produced an R² value of
+approximately 0.836, indicating a strong association in the analysed data.
+
+<img width="619" height="488" alt="image" src="https://github.com/user-attachments/assets/51d5b61e-b689-40b1-a240-5f715fe0a52b" />
+
+## Comparison with CAMS Data
+
+The station-based interpolation was compared with the coarser spatial
+pattern represented by the CAMS atmospheric dataset. The comparison
+illustrates the difference between local monitoring-based estimates and
+regional gridded atmospheric information.
+
+<img width="1126" height="1220" alt="image" src="https://github.com/user-attachments/assets/0884606a-5006-4480-931f-5525ba32643b" />
 

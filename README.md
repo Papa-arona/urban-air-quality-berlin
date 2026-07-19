@@ -50,3 +50,5 @@ The workflow included:
 - QGIS
 - ArcGIS Pro
 - Microsoft Excel
+
+- <img width="574" height="264" alt="image" src="https://github.com/user-attachments/assets/04d87f56-fdc1-468b-80a1-252d20140b77" />

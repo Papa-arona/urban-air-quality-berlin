@@ -1,6 +1,5 @@
 # Urban Air Quality and Mobility in Berlin
 
-
 ## Project Overview
 
 This project investigates the spatial distribution of nitrogen dioxide

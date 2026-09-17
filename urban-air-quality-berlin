@@ -1,0 +1,37 @@
+Urban-Air-Quality-and-Mobility-Berlin/
+│IMAGE
+├── README.md
+├── requirements.txt
+│
+├── src/
+│   └── berlin_air_quality/
+│       ├── data_collection.py
+│       ├── preprocessing.py
+│       ├── calibration/ 7steps by Sean-RIFS
+│       │   ├── step1_visualization.py
+│       │   ├── step2_cleaning.py
+│       │   ├── step3_quality_control.py
+│       │   ├── step4_model_selection.py
+│       │   ├── step5_validation.py
+│       │   └── step6_7_export.py
+│       ├── temporal_analysis.py
+│       ├── spatial_analysis.py
+│       ├── interpolation.py
+│       └── visualization.py
+│
+├── scripts/
+│   └── run_pipeline.py
+│
+├── GIS/
+│   ├── berlin_boundary/
+│   ├── traffic/
+│   ├── land_use/
+│   └── cams/
+│
+├── data/
+│   ├── raw/
+│   └── processed/
+│
+├── figures/
+│
+└── tests/

@@ -163,5 +163,31 @@ figures/
 ```
 
 ## Repository structure
+Urban-Air-Quality-and-Mobility-Berlin/
+│
+├── README.md
+├── main.py
+│
+├── python/
+│   ├── config.py
+│   ├── functions.py
+│   ├── 1_prepare_data.py
+│   ├── 2_analysis.py
+│   ├── 3_validation.py
+│   └── 4_export_results.py
+│
+├── data/
+│   ├── README.md
+│   └── raw/
+│       └── stations.csv
+│
+└── figures/
+    ├── 01_diurnal_no2.png
+    ├── 02_station_map.png
+    ├── 03_traffic_network.png
+    ├── 04_landuse.png
+    ├── 05_no2_idw.png
+    ├── 06_cams_comparison.png
+    └── 07_traffic_no2_validation.png
 
 

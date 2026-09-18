@@ -10,6 +10,7 @@ def clean_numeric(series):
         .str.replace(",", ".", regex=False)
         .str.strip()
     )
+
     return pd.to_numeric(series, errors="coerce")
 
 
@@ -35,13 +36,3 @@ def idw(points, values, grid_x, grid_y, power=2):
     )
 
     return result.reshape(grid_x.shape)
-
-
-def r_squared(y, y_pred):
-    y = np.asarray(y)
-    y_pred = np.asarray(y_pred)
-
-    return 1 - (
-        np.sum((y - y_pred) ** 2)
-        / np.sum((y - y.mean()) ** 2)
-    )

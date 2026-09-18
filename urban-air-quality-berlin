@@ -1,8 +1,6 @@
 Urban-Air-Quality-and-Mobility-Berlin/
 │
 ├── README.md
-├── requirements.txt
-├── .gitignore
 ├── main.py
 │
 ├── python/

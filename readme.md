@@ -107,14 +107,12 @@ It produces:
 
 ### Monitoring Stations
 
-<img width="1448" height="1086" alt="Monitoring stations" src="https://github.com/user-attachments/assets/fce7da44-c494-4b6a-8111-b1e41e885d37" />
 
 ### Diurnal NO₂ Pattern
 
 This figure compares average NO₂ concentrations throughout the day across
 the monitoring-station categories.
 
-<img width="662" height="410" alt="Diurnal NO₂ pattern" src="https://github.com/user-attachments/assets/12a493af-bcd5-46f1-96d2-f4389f6e073a" />
 
 ### Traffic Network
 
@@ -122,28 +120,17 @@ Average daily traffic volumes are analysed across Berlin's road network.
 Traffic measurement nodes are used to connect traffic intensity with the
 NO₂ results.
 
-<img width="1448" height="1086" alt="Traffic network" src="https://github.com/user-attachments/assets/684dfdf7-9c44-4ab5-9c25-828dd829e79e" />
 
 ### Land Use
 
 Land-use information provides spatial context for the distribution of
 NO₂ across Berlin.
 
-<img width="1448" height="1086" alt="Land use" src="https://github.com/user-attachments/assets/edb09b58-9aba-407b-9383-8b32463c5633" />
-
 ### Spatial Distribution of NO₂
 
 Inverse Distance Weighting (IDW) is used to transform the monitoring-station
 measurements into a continuous NO₂ concentration surface.
 
-<img width="1448" height="1086" alt="NO₂ spatial distribution" src="https://github.com/user-attachments/assets/30262b83-6c42-4892-a558-b7f5ebcabc2b" />
-
-### CAMS Comparison
-
-The interpolated NO₂ surface is compared with the gridded CAMS product using
-the same concentration classes.
-
-<img width="1448" height="1086" alt="CAMS comparison" src="https://github.com/user-attachments/assets/91a101a9-64e4-412f-8e63-b356d1d3b655" />
 
 ## 3. Validation
 
@@ -169,8 +156,6 @@ data/processed/validation_results.csv
 ### Traffic and NO₂
 
 The analysed relationship produced an R² of 0.394 for the current dataset and workflow.
-
-<img width="619" height="488" alt="Traffic and NO₂ relationship" src="https://github.com/user-attachments/assets/51d5b61e-b689-40b1-a240-5f715fe0a52b" />
 
 ## 4. Export
 

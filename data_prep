@@ -1,0 +1,266 @@
+import re
+import time
+
+import pandas as pd
+import geopandas as gpd
+
+from geopy.geocoders import Nominatim
+
+from importlib.util import (
+    spec_from_file_location,
+    module_from_spec
+)
+
+from pathlib import Path
+
+
+# ============================================================
+# LOAD CONFIGURATION
+# ============================================================
+
+CONFIG_FILE = Path(__file__).with_name(
+    "0_config.py"
+)
+
+SPEC = spec_from_file_location(
+    "config",
+    CONFIG_FILE
+)
+
+CONFIG = module_from_spec(SPEC)
+
+SPEC.loader.exec_module(CONFIG)
+
+
+from functions import (
+    find_datetime_column,
+    clean_numeric
+)
+
+
+print("=" * 60)
+print("STEP 1 - DATA PREPARATION")
+print("=" * 60)
+
+
+# ============================================================
+# DOWNLOAD NO2 DATA
+# ============================================================
+
+print("\nDownloading NO2 data...")
+
+no2 = pd.read_csv(
+    CONFIG.NO2_URL,
+    sep=";",
+    encoding="utf-8"
+)
+
+print(
+    f"Downloaded {len(no2):,} rows."
+)
+
+
+no2.to_csv(
+    CONFIG.NO2_FILE,
+    index=False
+)
+
+
+# ============================================================
+# CLEAN NO2 DATA
+# ============================================================
+
+print("\nCleaning NO2 data...")
+
+
+datetime_column = find_datetime_column(
+    no2
+)
+
+
+no2[datetime_column] = pd.to_datetime(
+    no2[datetime_column],
+    dayfirst=True,
+    errors="coerce"
+)
+
+
+no2 = no2.rename(
+    columns={
+        datetime_column: "datetime"
+    }
+)
+
+
+station_columns = [
+    column
+    for column in no2.columns
+    if re.match(
+        r"^\d{3}\s",
+        str(column)
+    )
+]
+
+
+if not station_columns:
+
+    raise ValueError(
+        "No monitoring-station columns were found."
+    )
+
+
+no2 = no2.melt(
+    id_vars="datetime",
+    value_vars=station_columns,
+    var_name="station",
+    value_name="no2"
+)
+
+
+no2["no2"] = clean_numeric(
+    no2["no2"]
+)
+
+
+no2 = no2.dropna(
+    subset=[
+        "datetime",
+        "no2"
+    ]
+)
+
+
+no2["date"] = (
+    no2["datetime"].dt.date
+)
+
+no2["hour"] = (
+    no2["datetime"].dt.hour
+)
+
+no2["month"] = (
+    no2["datetime"].dt.month
+)
+
+
+no2 = no2.sort_values(
+    [
+        "station",
+        "datetime"
+    ]
+)
+
+
+no2.to_csv(
+    CONFIG.CLEAN_NO2_FILE,
+    index=False
+)
+
+
+print(
+    f"Clean observations: {len(no2):,}"
+)
+
+
+# ============================================================
+# STATION INFORMATION
+# ============================================================
+
+print("\nPreparing station information...")
+
+
+stations = pd.read_csv(
+    CONFIG.STATIONS_FILE
+)
+
+
+# ============================================================
+# GEOCODING
+# ============================================================
+
+print("\nGeocoding stations...")
+
+
+geolocator = Nominatim(
+    user_agent="urban-air-quality-berlin-project"
+)
+
+
+latitudes = []
+longitudes = []
+
+
+for _, row in stations.iterrows():
+
+    address = (
+        f"{row['address']}, Berlin, Germany"
+    )
+
+    print(
+        f"  {row['station']}"
+    )
+
+    location = geolocator.geocode(
+        address
+    )
+
+    if location is None:
+
+        latitudes.append(None)
+        longitudes.append(None)
+
+    else:
+
+        latitudes.append(
+            location.latitude
+        )
+
+        longitudes.append(
+            location.longitude
+        )
+
+    time.sleep(1)
+
+
+stations["latitude"] = latitudes
+
+stations["longitude"] = longitudes
+
+
+stations = stations.dropna(
+    subset=[
+        "latitude",
+        "longitude"
+    ]
+)
+
+
+# ============================================================
+# CREATE GEOGRAPHIC POINTS
+# ============================================================
+
+station_gdf = gpd.GeoDataFrame(
+    stations,
+    geometry=gpd.points_from_xy(
+        stations["longitude"],
+        stations["latitude"]
+    ),
+    crs=CONFIG.CRS_LATLON
+)
+
+
+station_gdf.to_file(
+    CONFIG.STATIONS_GEOJSON,
+    driver="GeoJSON"
+)
+
+
+print(
+    f"\nStations prepared: {len(station_gdf)}"
+)
+
+print(
+    f"Saved:\n{CONFIG.STATIONS_GEOJSON}"
+)
+
+print("\nData preparation complete.")

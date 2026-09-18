@@ -20,4 +20,4 @@ VALIDATION = PROCESSED / "validation_results.csv"
 NO2_URL = "https://luftdaten.berlin.de/core/no2.csv"
 
 CRS = "EPSG:25833"
-IDW_POWER = 2
+IDW_POWER (p) = 2

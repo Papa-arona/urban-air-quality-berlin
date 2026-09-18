@@ -168,7 +168,7 @@ data/processed/validation_results.csv
 
 ### Traffic and NO₂
 
-The analysed relationship produced an R² of approximately 0.836.
+The analysed relationship produced an R² of 0.394 for the current dataset and workflow.
 
 <img width="619" height="488" alt="Traffic and NO₂ relationship" src="https://github.com/user-attachments/assets/51d5b61e-b689-40b1-a240-5f715fe0a52b" />
 
@@ -217,6 +217,5 @@ Urban-Air-Quality-and-Mobility-Berlin/
     ├── 03_traffic_network.png
     ├── 04_landuse.png
     ├── 05_no2_idw.png
-    ├── 06_cams_comparison.png
     └── 07_traffic_no2_validation.png
 ```

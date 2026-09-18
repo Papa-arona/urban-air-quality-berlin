@@ -54,13 +54,13 @@ VALIDATION_FILE = (
 
 POLLUTANT = "NO2"
 
-PERIOD = "1h"
+PERIOD = "2025"
 
 STUDY_CRS = "EPSG:25833"
 
 GRID_SIZE = 200
 
-IDW_POWER = 2
+IDW_POWER p = 2
 
 
 # ============================================================

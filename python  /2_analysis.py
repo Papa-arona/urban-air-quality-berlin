@@ -3,11 +3,17 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
+from shapely.geometry import Point
+from shapely.ops import unary_union
+
 import config
 from functions import idw
 
 
-print("Running analysis...")
+
+# --------------------------------------------------
+# Load data
+# --------------------------------------------------
 
 df = pd.read_csv(
     config.CLEAN_NO2,
@@ -16,12 +22,24 @@ df = pd.read_csv(
 
 stations = gpd.read_file(
     config.STATIONS_GEOJSON
-)
+).to_crs(config.CRS)
+
+traffic = gpd.read_file(
+    config.TRAFFIC_FILE
+).to_crs(config.CRS)
+
+landuse = gpd.read_file(
+    config.LANDUSE_FILE
+).to_crs(config.CRS)
+
+cams = gpd.read_file(
+    config.CAMS_FILE
+).to_crs(config.CRS)
 
 
-# -------------------------
-# Temporal analysis
-# -------------------------
+# --------------------------------------------------
+# 1. Diurnal NO2
+# --------------------------------------------------
 
 hourly = (
     df.groupby(
@@ -37,27 +55,26 @@ for name, group in hourly.groupby("station_type"):
     plt.plot(
         group["hour"],
         group["no2"],
-        marker="o",
         label=name
     )
 
-plt.xlabel("Hour")
-plt.ylabel("NO₂ (µg/m³)")
-plt.title("Average hourly NO₂")
+plt.xlabel("Time [h]")
+plt.ylabel("NO₂ [µg/m³]")
+plt.title("Diurnal Cycle of NO₂")
 plt.legend()
 plt.tight_layout()
 
 plt.savefig(
-    config.FIGURES / "daily_no2_pattern.png",
+    config.FIGURES / "01_diurnal_no2.png",
     dpi=300
 )
 
 plt.close()
 
 
-# -------------------------
-# Station averages
-# -------------------------
+# --------------------------------------------------
+# 2. Station map
+# --------------------------------------------------
 
 means = (
     df.groupby("station")["no2"]
@@ -70,29 +87,35 @@ stations = stations.merge(
     on="station"
 )
 
-stations = stations.to_crs(
-    config.CRS
-)
+colors = {
+    "Traffic": "#E5A800",
+    "Urban background": "#E53935",
+    "Outskirts of the City": "#168BD8"
+}
 
+fig, ax = plt.subplots(figsize=(9, 8))
 
-# -------------------------
-# Station map
-# -------------------------
+for name, group in stations.groupby("station_type"):
+    group.plot(
+        ax=ax,
+        color=colors.get(name, "grey"),
+        edgecolor="black",
+        markersize=90,
+        label=name
+    )
 
-fig, ax = plt.subplots(
-    figsize=(8, 8)
-)
-
-stations.plot(
+stations.boundary.plot(
     ax=ax,
-    column="no2",
-    cmap="RdYlGn_r",
-    legend=True,
-    markersize=60
+    color="black",
+    linewidth=1.2
 )
 
 ax.set_title(
-    "Mean NO₂ at monitoring stations"
+    "Berlin NO₂ Monitoring Stations"
+)
+
+ax.legend(
+    title="Station type"
 )
 
 ax.set_axis_off()
@@ -100,32 +123,190 @@ ax.set_axis_off()
 plt.tight_layout()
 
 plt.savefig(
-    config.FIGURES / "station_map.png",
+    config.FIGURES / "02_station_map.png",
     dpi=300
 )
 
 plt.close()
 
 
-# -------------------------
-# IDW
-# -------------------------
+# --------------------------------------------------
+# 3. Traffic network and traffic nodes
+# --------------------------------------------------
+
+traffic = traffic[
+    traffic["road_type"].isin(
+        ["motorway", "primary", "tertiary"]
+    )
+].copy()
+
+traffic["traffic_class"] = pd.cut(
+    traffic["traffic_volume"],
+    bins=config.TRAFFIC_BINS,
+    labels=config.TRAFFIC_LABELS,
+    include_lowest=True
+)
+
+traffic_colors = [
+    "#3BAF2C",
+    "#5FCF1A",
+    "#8BD417",
+    "#F2B705",
+    "#F5CC3B",
+    "#FF8C00",
+    "#E60000",
+    "#9B1FA8"
+]
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+for class_name, group in traffic.groupby(
+    "traffic_class",
+    observed=False
+):
+
+    group.plot(
+        ax=ax,
+        color=traffic_colors[
+            list(config.TRAFFIC_LABELS).index(
+                class_name
+            )
+        ],
+        linewidth=1,
+        label=class_name
+    )
+
+
+# intersections
+pairs = gpd.sjoin(
+    traffic[["geometry"]],
+    traffic[["geometry"]],
+    predicate="intersects"
+)
+
+points = []
+
+for idx, row in pairs.iterrows():
+
+    other = row["index_right"]
+
+    if idx >= other:
+        continue
+
+    geom = traffic.loc[
+        idx,
+        "geometry"
+    ].intersection(
+        traffic.loc[
+            other,
+            "geometry"
+        ]
+    )
+
+    if geom.geom_type == "Point":
+        points.append(geom)
+
+
+nodes = gpd.GeoDataFrame(
+    geometry=points,
+    crs=traffic.crs
+)
+
+node_counts = gpd.sjoin(
+    nodes,
+    traffic[["geometry"]],
+    predicate="intersects"
+).groupby(
+    level=0
+).size()
+
+nodes["Join_Count"] = node_counts
+
+nodes = nodes[
+    nodes["Join_Count"] >= 5
+]
+
+nodes.plot(
+    ax=ax,
+    facecolor="white",
+    edgecolor="black",
+    markersize=55
+)
+
+ax.set_title(
+    "Berlin Traffic Network and Traffic Nodes"
+)
+
+ax.legend(
+    title="Vehicles per day",
+    loc="upper right"
+)
+
+ax.set_axis_off()
+
+plt.tight_layout()
+
+plt.savefig(
+    config.FIGURES / "03_traffic_network.png",
+    dpi=300
+)
+
+plt.close()
+
+nodes.to_file(
+    config.PROCESSED / "traffic_nodes.gpkg",
+    driver="GPKG"
+)
+
+
+# --------------------------------------------------
+# 4. Land use
+# --------------------------------------------------
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+landuse.plot(
+    ax=ax,
+    column="landuse",
+    categorical=True,
+    legend=True,
+    edgecolor="black",
+    linewidth=0.15
+)
+
+ax.set_title(
+    "Land Use in Berlin"
+)
+
+ax.set_axis_off()
+
+plt.tight_layout()
+
+plt.savefig(
+    config.FIGURES / "04_landuse.png",
+    dpi=300
+)
+
+plt.close()
+
+
+# --------------------------------------------------
+# 5. IDW NO2 map
+# --------------------------------------------------
 
 x = stations.geometry.x.to_numpy()
 y = stations.geometry.y.to_numpy()
 values = stations["no2"].to_numpy()
 
-margin = 3000
-
 grid_x, grid_y = np.meshgrid(
     np.linspace(
-        x.min() - margin,
-        x.max() + margin,
+        x.min() - 5000,
+        x.max() + 5000,
         200
     ),
     np.linspace(
-        y.min() - margin,
-        y.max() + margin,
+        y.min() - 5000,
+        y.max() + 5000,
         200
     )
 )
@@ -138,12 +319,41 @@ grid_z = idw(
     config.IDW_POWER
 )
 
-fig, ax = plt.subplots(
-    figsize=(8, 8)
+no2_bins = [
+    0,
+    10.5,
+    12.7,
+    14.8,
+    16.8,
+    20.8,
+    24.8,
+    1000
+]
+
+no2_labels = [
+    "7.1 - 10.5",
+    "10.6 - 12.7",
+    "12.8 - 14.8",
+    "14.9 - 16.8",
+    "16.9 - 20.8",
+    "20.8 - 24.8",
+    ">= 24.9"
+]
+
+grid_class = np.digitize(
+    grid_z,
+    no2_bins
 )
 
+cmap = plt.get_cmap(
+    "RdYlBu_r",
+    len(no2_labels)
+)
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
 image = ax.imshow(
-    grid_z,
+    grid_class,
     extent=[
         grid_x.min(),
         grid_x.max(),
@@ -151,163 +361,89 @@ image = ax.imshow(
         grid_y.max()
     ],
     origin="lower",
-    cmap="RdYlGn_r"
+    cmap=cmap,
+    vmin=1,
+    vmax=len(no2_labels)
+)
+
+traffic.plot(
+    ax=ax,
+    color="grey",
+    linewidth=0.25
 )
 
 stations.plot(
     ax=ax,
     color="black",
-    markersize=15
+    markersize=18
 )
 
 plt.colorbar(
     image,
     ax=ax,
-    label="NO₂ (µg/m³)"
+    ticks=np.arange(
+        1,
+        len(no2_labels) + 1
+    )
 )
 
 ax.set_title(
-    "NO₂ spatial distribution"
+    "Spatial Distribution of NO₂"
 )
+
+ax.set_axis_off()
 
 plt.tight_layout()
 
 plt.savefig(
-    config.FIGURES / "no2_idw.png",
+    config.FIGURES / "05_no2_idw.png",
     dpi=300
 )
 
 plt.close()
 
 
-# -------------------------
-# Traffic
-# -------------------------
+# --------------------------------------------------
+# 6. CAMS comparison
+# --------------------------------------------------
 
-traffic = gpd.read_file(
-    config.TRAFFIC_FILE
-).to_crs(config.CRS)
-
-traffic_cols = [
-    c for c in traffic.columns
-    if "dtvw" in c.lower()
-]
-
-traffic_field = traffic_cols[0]
-
-traffic[traffic_field] = pd.to_numeric(
-    traffic[traffic_field],
-    errors="coerce"
+cams["no2_class"] = pd.cut(
+    cams["no2"],
+    bins=no2_bins,
+    labels=no2_labels,
+    include_lowest=True
 )
 
-traffic = traffic.dropna(
-    subset=[traffic_field]
+fig, ax = plt.subplots(figsize=(10, 8))
+
+cams.plot(
+    ax=ax,
+    column="no2_class",
+    categorical=True,
+    legend=True,
+    edgecolor="none"
 )
 
-joined = gpd.sjoin_nearest(
-    stations,
-    traffic[[traffic_field, "geometry"]],
-    how="left"
+traffic.plot(
+    ax=ax,
+    color="grey",
+    linewidth=0.25
 )
 
-traffic_result = joined[
-    [
-        "station",
-        "station_type",
-        "no2",
-        traffic_field
-    ]
-].rename(
-    columns={
-        "no2": "mean_no2",
-        traffic_field: "traffic_volume"
-    }
+ax.set_title(
+    "CAMS NO₂ Spatial Distribution"
 )
 
-traffic_result.to_csv(
-    config.TRAFFIC_NO2,
-    index=False
-)
-
-plt.figure(figsize=(7, 5))
-
-plt.scatter(
-    traffic_result["traffic_volume"],
-    traffic_result["mean_no2"]
-)
-
-plt.xlabel("Traffic volume")
-plt.ylabel("Mean NO₂ (µg/m³)")
-plt.title("Traffic and NO₂")
+ax.set_axis_off()
 
 plt.tight_layout()
 
 plt.savefig(
-    config.FIGURES / "traffic_no2_relationship.png",
+    config.FIGURES / "06_cams_comparison.png",
     dpi=300
 )
 
 plt.close()
 
 
-# -------------------------
-# Land use
-# -------------------------
-
-landuse = gpd.read_file(
-    config.LANDUSE_FILE
-).to_crs(config.CRS)
-
-fields = [
-    c for c in landuse.columns
-    if c != landuse.geometry.name
-    and landuse[c].dtype == "object"
-]
-
-landuse_field = fields[0]
-
-landuse_join = gpd.sjoin(
-    stations,
-    landuse[[landuse_field, "geometry"]],
-    how="left",
-    predicate="within"
-)
-
-landuse_result = landuse_join[
-    [
-        "station",
-        "station_type",
-        "no2",
-        landuse_field
-    ]
-]
-
-landuse_result.to_csv(
-    config.LANDUSE_NO2,
-    index=False
-)
-
-summary = (
-    landuse_result
-    .groupby(landuse_field)["no2"]
-    .mean()
-)
-
-summary.plot(
-    kind="bar",
-    figsize=(9, 5)
-)
-
-plt.ylabel("Mean NO₂ (µg/m³)")
-plt.xlabel("Land-use category")
-plt.title("NO₂ and land use")
-plt.tight_layout()
-
-plt.savefig(
-    config.FIGURES / "no2_landuse.png",
-    dpi=300
-)
-
-plt.close()
-
-print("Analysis finished.")
+print("step 2 done")

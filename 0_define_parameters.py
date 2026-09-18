@@ -1,73 +1,92 @@
-# ============================================================
-# DEFINE PARAMETERS
-# Urban Air Quality and Mobility in Berlin
-# ============================================================
-
 from pathlib import Path
 
 
-## ---- define directories ----
+# ============================================================
+# PROJECT
+# ============================================================
 
-main_dir = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 
-data_dir = main_dir / "data"
-raw_dir = data_dir / "raw"
-processed_dir = data_dir / "processed"
+DATA_DIR = PROJECT_DIR / "data"
+RAW_DIR = DATA_DIR / "raw"
+PROCESSED_DIR = DATA_DIR / "processed"
 
-gis_dir = main_dir / "gis"
-figures_dir = main_dir / "figures"
-
-
-## ---- create directories ----
-
-for directory in [
-    raw_dir,
-    processed_dir,
-    figures_dir,
-]:
-    directory.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+GIS_DIR = PROJECT_DIR / "gis"
+FIGURES_DIR = PROJECT_DIR / "figures"
 
 
-## ---- define data source ----
+# ============================================================
+# DATA
+# ============================================================
 
-viz_url = (
-    "https://viz.berlin.de/en/umwelt/air-quality/"
+NO2_FILE = RAW_DIR / "no2.csv"
+TRAFFIC_FILE = RAW_DIR / "traffic.gpkg"
+LANDUSE_FILE = RAW_DIR / "landuse.gpkg"
+
+STATION_FILE = GIS_DIR / "stations.csv"
+
+
+# ============================================================
+# OUTPUTS
+# ============================================================
+
+CLEAN_NO2_FILE = PROCESSED_DIR / "no2_clean.csv"
+FLAGGED_NO2_FILE = PROCESSED_DIR / "no2_flagged.csv"
+
+STATIONS_FILE = PROCESSED_DIR / "stations.geojson"
+
+TRAFFIC_RESULT_FILE = (
+    PROCESSED_DIR / "traffic_no2.csv"
+)
+
+LANDUSE_RESULT_FILE = (
+    PROCESSED_DIR / "no2_landuse.csv"
+)
+
+VALIDATION_FILE = (
+    PROCESSED_DIR / "validation_results.csv"
 )
 
 
-## ---- define dates ----
+# ============================================================
+# STUDY PARAMETERS
+# ============================================================
 
-start_date = "2025-01-01"
-end_date = "2025-12-31"
+POLLUTANT = "NO2"
+
+PERIOD = "1h"
+
+STUDY_CRS = "EPSG:25833"
+
+GRID_SIZE = 200
+
+IDW_POWER = 2
 
 
-## ---- define pollutant ----
+# ============================================================
+# BERLIN AIR QUALITY DATA
+# ============================================================
 
-pollutant = "NO2"
-
-
-## ---- define time interval ----
-
-time_interval = "hourly"
-
-
-## ---- define GIS files ----
-
-berlin_boundary = (
-    gis_dir / "berlin_boundary" / "berlin.shp"
+NO2_URL = (
+    "https://luftdaten.berlin.de/core/no2.csv"
 )
 
-station_file = (
-    gis_dir / "stations" / "stations.geojson"
+
+# ============================================================
+# CREATE OUTPUT DIRECTORIES
+# ============================================================
+
+RAW_DIR.mkdir(
+    parents=True,
+    exist_ok=True
 )
 
-traffic_file = (
-    gis_dir / "traffic" / "traffic.shp"
+PROCESSED_DIR.mkdir(
+    parents=True,
+    exist_ok=True
 )
 
-land_cover_file = (
-    gis_dir / "land_cover" / "land_cover.shp"
+FIGURES_DIR.mkdir(
+    parents=True,
+    exist_ok=True
 )

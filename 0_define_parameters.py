@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 # ============================================================
-# PROJECT
+# PROJECT PATHS
 # ============================================================
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -11,69 +11,60 @@ DATA_DIR = PROJECT_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
-GIS_DIR = PROJECT_DIR / "gis"
+STATIONS_DIR = PROJECT_DIR / "stations"
 FIGURES_DIR = PROJECT_DIR / "figures"
 
 
 # ============================================================
-# DATA
+# INPUT FILES
 # ============================================================
 
 NO2_FILE = RAW_DIR / "no2.csv"
+
 TRAFFIC_FILE = RAW_DIR / "traffic.gpkg"
+
 LANDUSE_FILE = RAW_DIR / "landuse.gpkg"
 
-STATION_FILE = GIS_DIR / "stations.csv"
+STATIONS_FILE = STATIONS_DIR / "stations.csv"
 
 
 # ============================================================
-# OUTPUTS
+# OUTPUT FILES
 # ============================================================
 
 CLEAN_NO2_FILE = PROCESSED_DIR / "no2_clean.csv"
-FLAGGED_NO2_FILE = PROCESSED_DIR / "no2_flagged.csv"
 
-STATIONS_FILE = PROCESSED_DIR / "stations.geojson"
+STATIONS_GEOJSON = PROCESSED_DIR / "stations.geojson"
 
-TRAFFIC_RESULT_FILE = (
-    PROCESSED_DIR / "traffic_no2.csv"
-)
+TRAFFIC_NO2_FILE = PROCESSED_DIR / "traffic_no2.csv"
 
-LANDUSE_RESULT_FILE = (
-    PROCESSED_DIR / "no2_landuse.csv"
-)
+LANDUSE_NO2_FILE = PROCESSED_DIR / "landuse_no2.csv"
 
-VALIDATION_FILE = (
-    PROCESSED_DIR / "validation_results.csv"
-)
+VALIDATION_FILE = PROCESSED_DIR / "validation_results.csv"
 
 
 # ============================================================
-# STUDY PARAMETERS
+# DATA SOURCE
 # ============================================================
 
-POLLUTANT = "NO2"
-
-PERIOD = "2025"
-
-STUDY_CRS = "EPSG:25833"
-
-GRID_SIZE = 200
-
-IDW_POWER p = 2
+NO2_URL = "https://luftdaten.berlin.de/core/no2.csv"
 
 
 # ============================================================
-# BERLIN AIR QUALITY DATA
+# ANALYSIS SETTINGS
 # ============================================================
 
-NO2_URL = (
-    "https://luftdaten.berlin.de/core/no2.csv"
-)
+CRS_LATLON = "EPSG:4326"
+
+CRS_PROJECTED = "EPSG:25833"
+
+IDW_POWER = 2
+
+IDW_GRID_SIZE = 200
 
 
 # ============================================================
-# CREATE OUTPUT DIRECTORIES
+# CREATE DIRECTORIES
 # ============================================================
 
 RAW_DIR.mkdir(

@@ -2,8 +2,6 @@
 
 The analysis uses data from several public sources.
 
-The datasets are not stored in the repository. Download the required
-datasets and place them in `data/raw/`.
 
 ## 1. Station data
 

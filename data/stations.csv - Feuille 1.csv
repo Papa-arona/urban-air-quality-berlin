@@ -1,0 +1,16 @@
+Stations,Types,Adress,Latitude,Longitude,City ,Country,Mean Annual NO2 (2025) µg/m³	
+010 Wedding,Urban background,"13353 Berlin, Amrumer Str./Limburger Str.",52.5429019,13.3486554,Berlin,Germany,18
+027 Marienfelde,Outskirts of the city,"12307 Berlin, Schichauweg 60",52.3962213,13.3688724,Berlin,Germany,8
+032 Grunewald,Outskirts of the city,"14193 Berlin, Jagen 91",52.4675293,13.2107326,Berlin,Germany,8
+042 Neukölln,Urban background,"12047 Berlin, Nansenstr. 10",52.4892279,13.4309029,Berlin,Germany,15
+077 Book,Outskirts of the city,"13125 Berlin, Hobrechtsfelder Chaussee 110-113",52.6441472,13.4830617,Berlin,Germany,9
+085 Friedrichshagen,Outskirts of the city,"12587 Berlin, Müggelseedamm 307-310",52.461374,13.6406056,Berlin,Germany,8
+117 Schildhornstraße,Traffic,"12163 Berlin, Schildhornstr. 76",52.4634937,13.318121,Berlin,Germany,16
+124 Mariendorfer Damm,Traffic,"12099 Berlin, Mariendorfer Damm 148",52.43826300000001,13.387409,Berlin,Germany,26
+144 Silbersteinstraße,Traffic,"12051 Berlin, Silbersteinstr. 5",52.467388,13.4411865,Berlin,Germany,26
+145 Frohnau,Outskirts of the city,"13465 Berlin, Jägerstieg 1",52.6538152,13.2953487,Berlin,Germany,7
+171 Mitte,Urban background,"10179 Berlin, Brückenstr. 6",52.5136501,13.4179757,Berlin,Germany,15
+174 Frankfurter Allee,Traffic,"10247 Berlin, Frankfurter Allee 86b",52.5139905,13.4701045,Berlin,Germany,24
+190 Leipziger Straße,Traffic,"10117 Berlin, Leipziger Straße 5",52.50975,13.38276,Berlin,Germany,24
+221 Karl-Marx-Straße,Traffic,"12043 Berlin, Karl-Marx-Str. 38",52.4836563,13.4294942,Berlin,Germany,22
+282 Karlshorst,Urban background,"10318 Berlin, Johanna-und-Willy-Brauer-Platz",52.52000659999999,13.404954,Berlin,Germany,13

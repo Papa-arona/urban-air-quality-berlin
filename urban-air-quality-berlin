@@ -14,7 +14,11 @@ Urban-Air-Quality-and-Mobility-Berlin/
 ├── data/
 │   ├── README.md
 │   └── raw/
-│       └── stations.csv
+│       ├── stations.csv
+│       ├── no2.csv
+│       ├── traffic.gpkg
+│       ├── landuse.gpkg
+│       └── berlin_boundary.gpkg
 │
 └── figures/
     ├── 01_diurnal_no2.png
@@ -22,5 +26,4 @@ Urban-Air-Quality-and-Mobility-Berlin/
     ├── 03_traffic_network.png
     ├── 04_landuse.png
     ├── 05_no2_idw.png
-    ├── 06_cams_comparison.png
     └── 07_traffic_no2_validation.png

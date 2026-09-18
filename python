@@ -1,6 +1,0 @@
-├── config.py
-├── functions.py
-├── 1_prepare_data.py
-├── 2_analysis.py
-├── 3_validation.py
-└── 4_export_results.py

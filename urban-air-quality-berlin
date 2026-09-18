@@ -13,11 +13,8 @@ Urban-Air-Quality-and-Mobility-Berlin/
 │
 ├── data/
 │   ├── README.md
-│   ├── raw/
-│   └── processed/
-│
-├── stations/
-│   └── stations.csv
+│   └── raw/
+│       └── stations.csv
 │
 └── figures/
     ├── 01_diurnal_no2.png

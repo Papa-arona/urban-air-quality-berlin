@@ -1,10 +1,6 @@
 import re
-import time
-
 import pandas as pd
 import geopandas as gpd
-
-from geopy.geocoders import Nominatim
 
 import config
 from functions import clean_numeric
@@ -54,61 +50,48 @@ df = df.dropna(
 df["hour"] = df["datetime"].dt.hour
 df["month"] = df["datetime"].dt.month
 
+
+# Station information
+# This CSV was created from the station information collected earlier.
+
 stations = pd.read_csv(
     config.STATIONS_FILE
 )
 
+stations = stations.rename(
+    columns={
+        "Stations": "station",
+        "Types": "station_type",
+        "Latitude": "latitude",
+        "Longitude": "longitude"
+    }
+)
+
+stations = stations[
+    [
+        "station",
+        "station_type",
+        "latitude",
+        "longitude"
+    ]
+]
+
 df = df.merge(
-    stations[["station", "station_type"]],
+    stations,
     on="station",
     how="left"
 )
+
+
+# Save cleaned NO2 data
 
 df.to_csv(
     config.CLEAN_NO2,
     index=False
 )
 
-df.to_csv(
-    config.NO2_FILE,
-    index=False
-)
 
-
-# Station coordinates
-
-print("Geocoding stations...")
-
-geolocator = Nominatim(
-    user_agent="berlin-no2-project"
-)
-
-lat = []
-lon = []
-
-for _, row in stations.iterrows():
-
-    address = row["station"] + ", Berlin, Germany"
-
-    location = geolocator.geocode(
-        address
-    )
-
-    if location:
-        lat.append(location.latitude)
-        lon.append(location.longitude)
-    else:
-        lat.append(None)
-        lon.append(None)
-
-    time.sleep(1)
-
-stations["latitude"] = lat
-stations["longitude"] = lon
-
-stations = stations.dropna(
-    subset=["latitude", "longitude"]
-)
+# Create station spatial layer
 
 geo = gpd.GeoDataFrame(
     stations,
@@ -124,4 +107,5 @@ geo.to_file(
     driver="GeoJSON"
 )
 
-print("Step 1 done.")
+
+print("Data preparation finished.")

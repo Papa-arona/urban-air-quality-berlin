@@ -12,7 +12,7 @@ LANDUSE_FILE = RAW / "landuse.gpkg"
 CAMS_FILE = RAW / "cams.gpkg"
 BOUNDARY_FILE = RAW / "berlin_boundary.gpkg"
 
-STATIONS_FILE = ROOT / "stations" / "stations.csv"
+STATIONS_FILE = RAW / "stations.csv"
 
 CLEAN_NO2 = PROCESSED / "no2_clean.csv"
 STATIONS_GEOJSON = PROCESSED / "stations.geojson"
@@ -23,7 +23,7 @@ VALIDATION = PROCESSED / "validation_results.csv"
 NO2_URL = "https://luftdaten.berlin.de/core/no2.csv"
 
 CRS = "EPSG:25833"
-IDW_POWER(p)= 2
+IDW_POWER = 2
 
 PROCESSED.mkdir(parents=True, exist_ok=True)
 FIGURES.mkdir(parents=True, exist_ok=True)

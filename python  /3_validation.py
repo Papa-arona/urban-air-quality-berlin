@@ -6,7 +6,7 @@ from scipy.stats import linregress
 import config
 
 
-print("Running validation...")
+print("validation...")
 
 
 df = pd.read_csv(

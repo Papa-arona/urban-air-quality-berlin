@@ -1,4 +1,5 @@
 import re
+
 import pandas as pd
 import geopandas as gpd
 
@@ -50,9 +51,13 @@ df = df.dropna(
 df["hour"] = df["datetime"].dt.hour
 df["month"] = df["datetime"].dt.month
 
+df["station_id"] = (
+    df["station"]
+    .str.extract(r"^(\d{3})")[0]
+)
 
-# Station information
-# This CSV was created from the station information collected earlier.
+
+# Station metadata
 
 stations = pd.read_csv(
     config.STATIONS_FILE
@@ -60,30 +65,39 @@ stations = pd.read_csv(
 
 stations = stations.rename(
     columns={
-        "Stations": "station",
+        "Stations": "station_name",
         "Types": "station_type",
         "Latitude": "latitude",
         "Longitude": "longitude"
     }
 )
 
+stations["station_id"] = (
+    stations["station_name"]
+    .astype(str)
+    .str.extract(r"^(\d{3})")[0]
+)
+
 stations = stations[
     [
-        "station",
+        "station_id",
         "station_type",
         "latitude",
         "longitude"
     ]
 ]
 
+
+# Combine NO2 and station information
+
 df = df.merge(
     stations,
-    on="station",
+    on="station_id",
     how="left"
 )
 
 
-# Save cleaned NO2 data
+# Save cleaned data
 
 df.to_csv(
     config.CLEAN_NO2,
@@ -91,13 +105,24 @@ df.to_csv(
 )
 
 
-# Create station spatial layer
+# Station layer
+
+station_data = (
+    stations
+    .dropna(
+        subset=[
+            "latitude",
+            "longitude"
+        ]
+    )
+    .drop_duplicates("station_id")
+)
 
 geo = gpd.GeoDataFrame(
-    stations,
+    station_data,
     geometry=gpd.points_from_xy(
-        stations["longitude"],
-        stations["latitude"]
+        station_data["longitude"],
+        station_data["latitude"]
     ),
     crs="EPSG:4326"
 )

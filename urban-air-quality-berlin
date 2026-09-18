@@ -2,33 +2,30 @@ Urban-Air-Quality-and-Mobility-Berlin/
 │
 ├── README.md
 ├── requirements.txt
+├── .gitignore
+├── main.py
 │
 ├── python/
-│   │
-│   ├── 0_define_parameters.py
-│   ├── 0_get_raw_data.py
-│   ├── 1_visualize_raw_data.py
-│   ├── 2_import_and_clean_data.py
-│   ├── 3_flag_data.py
-│   ├── 4_spatial_analysis.py
-│   ├── 5_model_validation.py
-│   ├── 6_7_export_results.py
-│   │
+│   ├── config.py
 │   ├── functions.py
-│   └── run_project.py
+│   ├── 1_prepare_data.py
+│   ├── 2_analysis.py
+│   ├── 3_validation.py
+│   └── 4_export_results.py
 │
 ├── data/
+│   ├── README.md
 │   ├── raw/
-│   │   ├── no2.csv
-│   │   ├── traffic.gpkg
-│   │   └── landuse.gpkg
-│   │
 │   └── processed/
 │
-├── gis/
+├── stations/
 │   └── stations.csv
 │
-├── figures/
-│
-└── docs/
-    └── methodology.md
+└── figures/
+    ├── 01_diurnal_no2.png
+    ├── 02_station_map.png
+    ├── 03_traffic_network.png
+    ├── 04_landuse.png
+    ├── 05_no2_idw.png
+    ├── 06_cams_comparison.png
+    └── 07_traffic_no2_validation.png

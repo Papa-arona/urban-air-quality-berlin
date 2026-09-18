@@ -3,8 +3,10 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
+from matplotlib.colors import ListedColormap
+
 import config
-from functions import idw
+from functions import idw, clean_numeric
 
 
 print("Running analysis...")
@@ -14,7 +16,10 @@ print("Running analysis...")
 # Load data
 # --------------------------------------------------
 
-df = pd.read_csv(config.CLEAN_NO2, parse_dates=["datetime"])
+df = pd.read_csv(
+    config.CLEAN_NO2,
+    parse_dates=["datetime"]
+)
 
 stations = gpd.read_file(
     config.STATIONS_GEOJSON
@@ -32,51 +37,33 @@ boundary = gpd.read_file(
     config.BOUNDARY_FILE
 ).to_crs(config.CRS)
 
-cams = None
-  
+
 # --------------------------------------------------
-# 1. Diurnal NO2
+# Annual NO2 values for 2025
 # --------------------------------------------------
 
-hourly = (
-    df.groupby(
-        ["station_type", "hour"]
-    )["no2"]
-    .mean()
-    .reset_index()
+station_info = pd.read_csv(
+    config.STATIONS_FILE
 )
 
-plt.figure(figsize=(9, 5))
-
-for name, group in hourly.groupby("station_type"):
-    plt.plot(
-        group["hour"],
-        group["no2"],
-        label=name
-    )
-
-plt.xlabel("Time [h]")
-plt.ylabel("NO₂ [µg/m³]")
-plt.title("Diurnal Cycle of NO₂")
-plt.legend()
-plt.tight_layout()
-
-plt.savefig(
-    config.FIGURES / "01_diurnal_no2.png",
-    dpi=300
-)
-
-plt.close()
-
-
-# --------------------------------------------------
-# 2. Monitoring stations
-
-df["station_id"] = (
-    df["station_id"]
+station_info["station_id"] = (
+    station_info["Stations"]
     .astype(str)
-    .str.replace(".0", "", regex=False)
+    .str.extract(r"^(\d{3})")[0]
     .str.zfill(3)
+)
+
+annual_no2_column = next(
+    column
+    for column in station_info.columns
+    if str(column)
+    .strip()
+    .lower()
+    .startswith("mean annual no2")
+)
+
+station_info["annual_no2"] = clean_numeric(
+    station_info[annual_no2_column]
 )
 
 stations["station_id"] = (
@@ -86,324 +73,821 @@ stations["station_id"] = (
     .str.zfill(3)
 )
 
-means = (
-    df.groupby(["station_id", "station"])["no2"]
-    .mean()
-    .reset_index()
-)
-
 stations = stations.merge(
-    means[["station_id", "no2"]],
+    station_info[
+        [
+            "station_id",
+            "annual_no2"
+        ]
+    ],
     on="station_id",
     how="left"
 )
 
-fig, ax = plt.subplots(figsize=(9, 8))
 
-colors = {
-    "Traffic": "orange",
-    "Urban background": "red",
-    "Outskirts of the city": "dodgerblue",
-    "Outskirts of the City": "dodgerblue"
-}
+# --------------------------------------------------
+# 1. Diurnal NO2
+# Recovered original 05.05.2026 data
+# --------------------------------------------------
 
-for name, group in stations.groupby("station_type"):
+hours = np.arange(24)
 
-    group.plot(
-        ax=ax,
-        color=colors.get(name, "grey"),
-        edgecolor="black",
-        markersize=70,
-        label=name
-    )
+urban_background = [
+    7, 8, 7, 8, 8, 9,
+    10, 10, 15, 14, 12, 18,
+    18, 25, 21, 15, 10, 6,
+    4, 4, 4, 4, 6, 5
+]
 
-boundary.boundary.plot(
-    ax=ax,
-    color="black"
+traffic_values = [
+    8, 9, 9, 8, 8, 8,
+    12, 17, 25, 24, 31, 29,
+    28, 22, 15, 12, 9, 12,
+    8, 10, 9, 9, 8, 7
+]
+
+outskirts = [
+    9, 6, np.nan, 6, 5, 5,
+    9, 15, 16, 15, 9, 12,
+    13, 10, 9, 6, 4, 4,
+    9, 6, 5, 5, 7, 7
+]
+
+fig, ax = plt.subplots(
+    figsize=(10, 5.5)
+)
+
+ax.plot(
+    hours,
+    urban_background,
+    color="#4f81bd",
+    linewidth=2,
+    label="Urban background"
+)
+
+ax.plot(
+    hours,
+    traffic_values,
+    color="#d94b3f",
+    linewidth=2,
+    label="Traffic"
+)
+
+ax.plot(
+    hours,
+    outskirts,
+    color="#f2b632",
+    linewidth=2,
+    label="Outskirts of the City"
 )
 
 ax.set_title(
-    "Berlin NO₂ Monitoring Stations"
+    "Diurnal Cycle of NO₂ [µg/m³]",
+    fontsize=15,
+    color="#666666"
 )
 
-ax.legend()
+ax.set_xlabel(
+    "Time [h]"
+)
+
+ax.set_ylabel(
+    ""
+)
+
+ax.set_xlim(
+    0,
+    23
+)
+
+ax.set_ylim(
+    0,
+    40
+)
+
+ax.set_xticks(
+    range(0, 24, 2)
+)
+
+ax.grid(
+    axis="y",
+    alpha=0.25
+)
+
+ax.legend(
+    loc="upper center",
+    bbox_to_anchor=(0.5, 0.94),
+    ncol=3,
+    frameon=False
+)
+
+fig.tight_layout()
+
+fig.savefig(
+    config.FIGURES /
+    "01_diurnal_no2.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.close(fig)
+
+
+# --------------------------------------------------
+# 2. Monitoring stations
+# --------------------------------------------------
+
+station_colors = {
+    "Outskirts of the city": "#238bd2",
+    "Outskirts of the City": "#238bd2",
+    "Traffic": "#f2a900",
+    "Urban background": "#e62b25"
+}
+
+fig, ax = plt.subplots(
+    figsize=(10, 8)
+)
+
+boundary.plot(
+    ax=ax,
+    facecolor="white",
+    edgecolor="#333333",
+    linewidth=1.5
+)
+
+for name, group in stations.groupby(
+    "station_type"
+):
+
+    group.plot(
+        ax=ax,
+        color=station_colors.get(
+            name,
+            "#777777"
+        ),
+        edgecolor="black",
+        linewidth=0.8,
+        markersize=190,
+        zorder=3,
+        label=name
+    )
+
+for _, row in stations.iterrows():
+
+    ax.annotate(
+        str(row["station_id"]),
+        (
+            row.geometry.x,
+            row.geometry.y
+        ),
+        xytext=(5, 5),
+        textcoords="offset points",
+        fontsize=8
+    )
+
+ax.set_title(
+    "Berlin NO₂ Monitoring Stations",
+    fontsize=15,
+    fontweight="bold"
+)
+
+ax.legend(
+    title="BLUME Stations",
+    loc="lower left",
+    frameon=True
+)
+
 ax.set_axis_off()
 
-plt.tight_layout()
+fig.tight_layout()
 
-plt.savefig(
-    config.FIGURES / "02_station_map.png",
-    dpi=300
+fig.savefig(
+    config.FIGURES /
+    "02_station_map.png",
+    dpi=300,
+    bbox_inches="tight"
 )
 
-plt.close()
+plt.close(fig)
+
 
 # --------------------------------------------------
 # 3. Traffic network
 # --------------------------------------------------
 
-from shapely.geometry import Point
-from shapely.ops import unary_union
-
-traffic_column = "dtv"
-
-traffic[traffic_column] = pd.to_numeric(
-    traffic[traffic_column],
+traffic["dtv"] = pd.to_numeric(
+    traffic["dtv"],
     errors="coerce"
 )
 
 traffic = traffic.dropna(
-    subset=[traffic_column]
+    subset=["dtv"]
 ).copy()
 
-traffic["traffic_class"] = pd.qcut(
-    traffic[traffic_column],
-    q=8,
-    duplicates="drop"
+traffic = gpd.clip(
+    traffic,
+    boundary
 )
+
+traffic_bins = [
+    20,
+    4500,
+    6540,
+    8620,
+    11080,
+    14160,
+    18700,
+    26080,
+    91080
+]
+
+traffic_labels = [
+    "20–4500",
+    "4500–6540",
+    "6540–8620",
+    "8620–11080",
+    "11080–14160",
+    "14160–18700",
+    "18700–26080",
+    "26080–91080"
+]
+
+traffic["traffic_class"] = pd.cut(
+    traffic["dtv"].clip(
+        lower=20,
+        upper=91080
+    ),
+    bins=traffic_bins,
+    labels=traffic_labels,
+    include_lowest=True
+)
+
+traffic_colors = [
+    "#27a65a",
+    "#63bb5e",
+    "#8ed34f",
+    "#f4c72e",
+    "#f5d76e",
+    "#f39a31",
+    "#ef3f30",
+    "#9b2ca3"
+]
 
 fig, ax = plt.subplots(
     figsize=(10, 8)
+)
+
+boundary.plot(
+    ax=ax,
+    facecolor="white",
+    edgecolor="#555555",
+    linewidth=1.5
 )
 
 traffic.plot(
     ax=ax,
     column="traffic_class",
-    cmap="RdYlGn_r",
+    categorical=True,
+    cmap=ListedColormap(
+        traffic_colors
+    ),
+    linewidth=1.0,
     legend=True,
-    linewidth=1
+    legend_kwds={
+        "title":
+        "Number of motor vehicles per 24 hours"
+    }
 )
 
-boundary.boundary.plot(
-    ax=ax,
-    color="black",
-    linewidth=1
-)
 
-network = unary_union(
-    traffic.geometry
-)
+# --------------------------------------------------
+# Traffic nodes
+#
+# The original nodes came from the old filtered
+# Geofabrik road network. That file is no longer
+# available locally, so this creates a comparable
+# node layer from the available road network.
+# --------------------------------------------------
 
-if hasattr(network, "geoms"):
-    parts = list(network.geoms)
-else:
-    parts = [network]
-
-points = []
-
-for line in parts:
-
-    if line.geom_type == "LineString":
-
-        points.append(
-            Point(line.coords[0])
-        )
-
-        points.append(
-            Point(line.coords[-1])
-        )
-
-nodes = gpd.GeoDataFrame(
-    geometry=points,
-    crs=traffic.crs
-)
-
-nodes["node_key"] = nodes.geometry.apply(
-    lambda point: (
-        round(point.x, 2),
-        round(point.y, 2)
-    )
-)
-
-counts = (
-    nodes["node_key"]
-    .value_counts()
-)
-
-nodes["Join_Count"] = (
-    nodes["node_key"]
-    .map(counts)
-)
-
-nodes = nodes[
-    nodes["Join_Count"] >= 5
+roads = traffic[
+    traffic.geometry.notna()
 ].copy()
 
-nodes = nodes.drop_duplicates(
-    subset="node_key"
+roads = roads.explode(
+    index_parts=False
+).reset_index(
+    drop=True
 )
 
-nodes.plot(
-    ax=ax,
-    color="white",
-    edgecolor="black",
-    markersize=45
+endpoint_records = []
+
+for road_id, geometry in enumerate(
+    roads.geometry
+):
+
+    if geometry.geom_type == "LineString":
+
+        coordinates = list(
+            geometry.coords
+        )
+
+        endpoint_records.extend(
+            [
+                {
+                    "road_id": road_id,
+                    "x": coordinates[0][0],
+                    "y": coordinates[0][1]
+                },
+                {
+                    "road_id": road_id,
+                    "x": coordinates[-1][0],
+                    "y": coordinates[-1][1]
+                }
+            ]
+        )
+
+endpoint_points = pd.DataFrame(
+    endpoint_records
 )
 
-nodes.to_file(
-    config.PROCESSED / "traffic_nodes.gpkg",
-    driver="GPKG"
-)
+if len(endpoint_points) > 0:
+
+    tolerance = 60
+
+    endpoint_points["grid_x"] = (
+        endpoint_points["x"] /
+        tolerance
+    ).round()
+
+    endpoint_points["grid_y"] = (
+        endpoint_points["y"] /
+        tolerance
+    ).round()
+
+    node_rows = []
+
+    for (
+        grid_x,
+        grid_y
+    ), group in endpoint_points.groupby(
+        [
+            "grid_x",
+            "grid_y"
+        ]
+    ):
+
+        road_count = (
+            group["road_id"]
+            .nunique()
+        )
+
+        if road_count >= 5:
+
+            node_rows.append(
+                {
+                    "x": (
+                        group["x"].mean()
+                    ),
+                    "y": (
+                        group["y"].mean()
+                    ),
+                    "Join_Count":
+                        road_count
+                }
+            )
+
+    if node_rows:
+
+        nodes = gpd.GeoDataFrame(
+            node_rows,
+            geometry=gpd.points_from_xy(
+                [row["x"] for row in node_rows],
+                [row["y"] for row in node_rows]
+            ),
+            crs=traffic.crs
+        )
+
+        nodes.plot(
+            ax=ax,
+            marker="o",
+            facecolor="white",
+            edgecolor="black",
+            linewidth=1.5,
+            markersize=80,
+            zorder=5,
+            label="Traffic Nodes"
+        )
+
+        nodes.to_file(
+            config.PROCESSED /
+            "traffic_nodes.gpkg",
+            driver="GPKG"
+        )
 
 ax.set_title(
-    "Berlin Traffic Network and Traffic Nodes"
+    "Berlin Traffic Network and Major Traffic Nodes",
+    fontsize=15,
+    fontweight="bold"
 )
 
 ax.set_axis_off()
 
-plt.tight_layout()
+fig.tight_layout()
 
-plt.savefig(
-    config.FIGURES / "03_traffic_network.png",
-    dpi=300
+fig.savefig(
+    config.FIGURES /
+    "03_traffic_network.png",
+    dpi=300,
+    bbox_inches="tight"
 )
 
-plt.close()
+plt.close(fig)
+
+
 # --------------------------------------------------
-# 4. Land use
+# 4. Land use / land cover
 # --------------------------------------------------
+
+landuse_columns = [
+    column
+    for column in landuse.columns
+    if column != landuse.geometry.name
+]
 
 landuse_column = next(
-    c for c in landuse.columns
-    if c.lower() in [
-        "landuse",
-        "land_use",
-        "nutzung",
-        "klasse",
-        "class"
-    ]
+    (
+        column
+        for column in landuse_columns
+        if any(
+            word in column.lower()
+            for word in [
+                "nutzung",
+                "landuse",
+                "land_use",
+                "klasse",
+                "class"
+            ]
+        )
+    ),
+    landuse_columns[0]
 )
+
+
+def simplify_landuse(value):
+
+    text = str(value).lower()
+
+    text = (
+        text
+        .replace("ä", "a")
+        .replace("ö", "o")
+        .replace("ü", "u")
+        .replace("ß", "ss")
+    )
+
+    if (
+        "wasser" in text
+        or "gewasser" in text
+    ):
+        return "Water"
+
+    if (
+        "acker" in text
+        or "landwirtschaft" in text
+        or "crop" in text
+    ):
+        return "Crops"
+
+    if (
+        "wohn" in text
+        or "mischnutzung" in text
+    ):
+        return "Residential"
+
+    if (
+        "gewerbe" in text
+        or "industrie" in text
+        or "versorgung" in text
+        or "entsorgung" in text
+    ):
+        return "Industrial"
+
+    if (
+        "einzelhandel" in text
+        or "handel" in text
+        or "retail" in text
+        or "kerngebiet" in text
+    ):
+        return "Commercial and Retail"
+
+    if (
+        "grun" in text
+        or "wald" in text
+        or "park" in text
+        or "friedhof" in text
+        or "kleingarten" in text
+        or "baumschule" in text
+        or "wochenendhaus" in text
+    ):
+        return "Greenery"
+
+    if (
+        "brache" in text
+        and (
+            "wiese" in text
+            or "vegetationsbestand" in text
+            or "geholz" in text
+            or "baum" in text
+        )
+    ):
+        return "Greenery"
+
+    return "Unclassified"
+
+
+landuse["lulc_group"] = (
+    landuse[landuse_column]
+    .apply(simplify_landuse)
+)
+
+lulc_order = [
+    "Residential",
+    "Water",
+    "Greenery",
+    "Industrial",
+    "Commercial and Retail",
+    "Crops",
+    "Unclassified"
+]
+
+landuse["lulc_group"] = pd.Categorical(
+    landuse["lulc_group"],
+    categories=lulc_order,
+    ordered=True
+)
+
+lulc_colors = [
+    "#ef2b2d",
+    "#9fd7ea",
+    "#198f3a",
+    "#d8bd77",
+    "#183c9c",
+    "#77df1b",
+    "#ffffff"
+]
 
 fig, ax = plt.subplots(
     figsize=(10, 8)
 )
 
-landuse.plot(
+boundary.plot(
     ax=ax,
-    column=landuse_column,
-    categorical=True,
-    legend=True,
+    facecolor="white",
     edgecolor="black",
-    linewidth=0.1
+    linewidth=1.4
 )
 
-boundary.boundary.plot(
+landuse.plot(
     ax=ax,
-    color="black"
+    column="lulc_group",
+    categorical=True,
+    cmap=ListedColormap(
+        lulc_colors
+    ),
+    edgecolor="black",
+    linewidth=0.15,
+    legend=True,
+    legend_kwds={
+        "title": ""
+    }
 )
 
 ax.set_title(
-    "Land Use in Berlin"
+    "Land Use and Land Cover in Berlin",
+    fontsize=15,
+    fontweight="bold"
 )
 
 ax.set_axis_off()
 
-plt.tight_layout()
+fig.tight_layout()
 
-plt.savefig(
-    config.FIGURES / "04_landuse.png",
-    dpi=300
+fig.savefig(
+    config.FIGURES /
+    "04_landuse.png",
+    dpi=300,
+    bbox_inches="tight"
 )
 
-plt.close()
+plt.close(fig)
 
 
 # --------------------------------------------------
 # 5. IDW interpolation
 # --------------------------------------------------
 
-x = stations.geometry.x.to_numpy()
-y = stations.geometry.y.to_numpy()
-values = stations["no2"].dropna().to_numpy()
+stations_valid = stations.dropna(
+    subset=["annual_no2"]
+).copy()
 
-valid = stations["no2"].notna()
-
-x = stations.loc[valid].geometry.x.to_numpy()
-y = stations.loc[valid].geometry.y.to_numpy()
-
-values = stations.loc[
-    valid,
-    "no2"
+x = stations_valid.geometry.x.to_numpy()
+y = stations_valid.geometry.y.to_numpy()
+values = stations_valid[
+    "annual_no2"
 ].to_numpy()
+
+minx, miny, maxx, maxy = (
+    boundary.total_bounds
+)
 
 grid_x, grid_y = np.meshgrid(
     np.linspace(
-        x.min() - 3000,
-        x.max() + 3000,
-        200
+        minx,
+        maxx,
+        300
     ),
     np.linspace(
-        y.min() - 3000,
-        y.max() + 3000,
-        200
+        miny,
+        maxy,
+        300
     )
 )
 
 grid_z = idw(
-    np.column_stack([x, y]),
+    np.column_stack(
+        [
+            x,
+            y
+        ]
+    ),
     values,
     grid_x,
     grid_y,
     config.IDW_POWER
 )
 
+berlin_shape = (
+    boundary.geometry
+    .union_all()
+)
+
+inside = (
+    berlin_shape
+    .contains(
+        gpd.points_from_xy(
+            grid_x.ravel(),
+            grid_y.ravel()
+        )
+    )
+)
+
+inside = np.asarray(
+    inside
+).reshape(
+    grid_x.shape
+)
+
+grid_z = np.where(
+    inside,
+    grid_z,
+    np.nan
+)
+
+
+# --------------------------------------------------
+# Seven original NO2 classes
+# --------------------------------------------------
+
+no2_breaks = [
+    10.5,
+    12.7,
+    14.8,
+    16.8,
+    20.8,
+    24.8
+]
+
+no2_labels = [
+    "7.1–10.5",
+    "10.6–12.7",
+    "12.8–14.8",
+    "14.9–16.8",
+    "16.9–20.8",
+    "20.8–24.8",
+    "≥24.9"
+]
+
+no2_class_index = np.digitize(
+    grid_z,
+    no2_breaks,
+    right=True
+)
+
+no2_class_index = np.where(
+    np.isnan(grid_z),
+    np.nan,
+    no2_class_index
+)
+
+# Colours taken from the original map
+no2_colors = [
+    "#f46d43",
+    "#313695",
+    "#74add1",
+    "#abd9e9",
+    "#fee090",
+    "#fdae61",
+    "#d73027"
+]
+
 fig, ax = plt.subplots(
     figsize=(10, 8)
 )
 
 image = ax.imshow(
-    grid_z,
+    no2_class_index,
     extent=[
-        grid_x.min(),
-        grid_x.max(),
-        grid_y.min(),
-        grid_y.max()
+        minx,
+        maxx,
+        miny,
+        maxy
     ],
     origin="lower",
-    cmap="RdYlBu_r"
+    cmap=ListedColormap(
+        no2_colors
+    ),
+    vmin=0,
+    vmax=6,
+    interpolation="nearest"
 )
 
+# Light traffic context
 traffic.plot(
     ax=ax,
-    color="grey",
-    linewidth=0.2
+    color="black",
+    linewidth=0.12,
+    alpha=0.35,
+    zorder=2
 )
 
 boundary.boundary.plot(
     ax=ax,
     color="black",
-    linewidth=1
+    linewidth=1.5,
+    zorder=4
 )
 
-stations.plot(
+stations_valid.plot(
     ax=ax,
     color="black",
-    markersize=15
+    edgecolor="white",
+    linewidth=0.8,
+    markersize=35,
+    zorder=5
 )
 
-plt.colorbar(
-    image,
-    ax=ax,
-    label="NO₂ [µg/m³]"
+legend_handles = [
+    plt.Line2D(
+        [0],
+        [0],
+        marker="s",
+        linestyle="",
+        markersize=11,
+        markerfacecolor=color,
+        markeredgecolor=color,
+        label=label
+    )
+    for color, label in zip(
+        no2_colors,
+        no2_labels
+    )
+]
+
+ax.legend(
+    handles=legend_handles,
+    title="Annual mean NO₂ [µg/m³]",
+    loc="upper right",
+    frameon=True
 )
 
 ax.set_title(
-    "Spatial Distribution of NO₂"
+    "Spatial Distribution of NO₂ in Berlin",
+    fontsize=15,
+    fontweight="bold"
 )
 
 ax.set_axis_off()
 
-plt.tight_layout()
+fig.tight_layout()
 
-plt.savefig(
-    config.FIGURES / "05_no2_idw.png",
-    dpi=300
+fig.savefig(
+    config.FIGURES /
+    "05_no2_idw.png",
+    dpi=300,
+    bbox_inches="tight"
 )
 
-plt.close()
-
-# 6. CAMS comparison
-# CAMS data will be added later.
+plt.close(fig)
 
 
-print("step 2 is done.")
+print("Analysis finished.")

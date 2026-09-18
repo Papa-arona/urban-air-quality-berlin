@@ -19,6 +19,11 @@ LANDUSE_WFS = (
     "ua_flaechennutzung"
 )
 
+BOUNDARY_WFS = (
+    "https://gdi.berlin.de/services/wfs/"
+    "alkis_land"
+)
+
 
 def get_wfs_layer(url, keywords):
     params = {
@@ -42,34 +47,47 @@ def get_wfs_layer(url, keywords):
     layers = []
 
     for feature in root.iter():
-        if feature.tag.endswith("FeatureType"):
 
-            name = None
-            title = None
+        if not feature.tag.endswith(
+            "FeatureType"
+        ):
+            continue
 
-            for child in feature:
+        name = None
+        title = None
 
-                if child.tag.endswith("Name"):
-                    name = child.text
+        for child in feature:
 
-                if child.tag.endswith("Title"):
-                    title = child.text
+            if child.tag.endswith(
+                "Name"
+            ):
+                name = child.text
 
-            if name:
-                layers.append(
-                    (name, title or "")
+            elif child.tag.endswith(
+                "Title"
+            ):
+                title = child.text
+
+        if name:
+            layers.append(
+                (
+                    name,
+                    title or ""
                 )
+            )
 
     for name, title in layers:
 
         text = (
             f"{name} {title}"
-        ).lower()
+            .lower()
+        )
 
         if any(
             word.lower() in text
             for word in keywords
         ):
+
             return (
                 f"{url}"
                 f"?service=WFS"
@@ -86,9 +104,8 @@ def get_wfs_layer(url, keywords):
 
 print("Preparing data...")
 
-
 # --------------------------------------------------
-# Download NO2
+# 1. Hourly NO2 data
 # --------------------------------------------------
 
 response = requests.get(
@@ -102,22 +119,17 @@ config.NO2_FILE.write_bytes(
     response.content
 )
 
-
 df = pd.read_csv(
     config.NO2_FILE,
     sep=";",
     encoding="utf-8"
 )
 
-
-# --------------------------------------------------
-# Clean NO2
-# --------------------------------------------------
-
 date_col = df.columns[0]
 
 df[date_col] = pd.to_datetime(
     df[date_col],
+    format="mixed",
     dayfirst=True,
     errors="coerce"
 )
@@ -129,10 +141,11 @@ df = df.rename(
 )
 
 station_cols = [
-    c for c in df.columns
+    column
+    for column in df.columns
     if re.match(
         r"^\d{3}\s",
-        str(c)
+        str(column)
     )
 ]
 
@@ -148,20 +161,30 @@ df["no2"] = clean_numeric(
 )
 
 df = df.dropna(
-    subset=["datetime", "no2"]
+    subset=[
+        "datetime",
+        "no2"
+    ]
 )
 
-df["hour"] = df["datetime"].dt.hour
-df["month"] = df["datetime"].dt.month
+df["hour"] = (
+    df["datetime"].dt.hour
+)
+
+df["month"] = (
+    df["datetime"].dt.month
+)
 
 df["station_id"] = (
     df["station"]
-    .str.extract(r"^(\d{3})")[0]
+    .str.extract(
+        r"^(\d{3})"
+    )[0]
+    .str.zfill(3)
 )
 
-
 # --------------------------------------------------
-# Station information
+# 2. Station information
 # --------------------------------------------------
 
 stations = pd.read_csv(
@@ -180,7 +203,10 @@ stations = stations.rename(
 stations["station_id"] = (
     stations["station_name"]
     .astype(str)
-    .str.extract(r"^(\d{3})")[0]
+    .str.extract(
+        r"^(\d{3})"
+    )[0]
+    .str.zfill(3)
 )
 
 stations = stations[
@@ -191,7 +217,11 @@ stations = stations[
         "latitude",
         "longitude"
     ]
-]
+].copy()
+
+# --------------------------------------------------
+# 3. Combine hourly measurements and stations
+# --------------------------------------------------
 
 df = df.merge(
     stations,
@@ -204,9 +234,8 @@ df.to_csv(
     index=False
 )
 
-
 # --------------------------------------------------
-# Station map layer
+# 4. Station spatial layer
 # --------------------------------------------------
 
 station_geo = gpd.GeoDataFrame(
@@ -218,63 +247,114 @@ station_geo = gpd.GeoDataFrame(
     crs="EPSG:4326"
 )
 
-station_geo.to_file(
+station_geo.to_crs(
+    config.CRS
+).to_file(
     config.STATIONS_GEOJSON,
     driver="GeoJSON"
 )
 
-
 # --------------------------------------------------
-# Traffic data
+# 5. Traffic WFS
 # --------------------------------------------------
 
-print("Downloading traffic data...")
+print(
+    "Downloading traffic data..."
+)
 
 traffic_url = get_wfs_layer(
     TRAFFIC_WFS,
-    ["verkehrsmengen", "dtv", "verkehr"]
+    [
+        "verkehrsmengen",
+        "dtv",
+        "verkehr"
+    ]
 )
 
 traffic = gpd.read_file(
     traffic_url
 )
 
+traffic = traffic[
+    traffic.geometry.notna()
+].copy()
+
 traffic.to_file(
     config.TRAFFIC_FILE,
     driver="GPKG"
 )
 
-
 # --------------------------------------------------
-# Land-use data
+# 6. Land-use WFS
 # --------------------------------------------------
 
-print("Downloading land-use data...")
+print(
+    "Downloading land-use data..."
+)
 
 landuse_url = get_wfs_layer(
     LANDUSE_WFS,
-    ["flaechennutzung", "flächennutzung", "land"]
+    [
+        "flaechennutzung",
+        "flächennutzung",
+        "land"
+    ]
 )
 
 landuse = gpd.read_file(
     landuse_url
 )
 
+landuse = landuse[
+    landuse.geometry.notna()
+].copy()
+
 landuse.to_file(
     config.LANDUSE_FILE,
     driver="GPKG"
 )
 
+# --------------------------------------------------
+# 7. Official Berlin boundary
+# --------------------------------------------------
 
-# --------------------------------------------------
-# Berlin boundary
-# --------------------------------------------------
+print(
+    "Downloading Berlin boundary..."
+)
+
+boundary_url = get_wfs_layer(
+    BOUNDARY_WFS,
+    [
+        "landesgrenze",
+        "berlin landesgrenze",
+        "alkis land"
+    ]
+)
+
+boundary = gpd.read_file(
+    boundary_url
+)
+
+boundary = boundary[
+    boundary.geometry.notna()
+].copy()
+
+boundary = boundary.to_crs(
+    config.CRS
+)
+
+boundary_geometry = (
+    boundary.geometry
+    .union_all()
+    .buffer(0)
+)
 
 boundary = gpd.GeoDataFrame(
-    geometry=[
-        landuse.geometry.union_all()
-    ],
-    crs=landuse.crs
+    {
+        "name": ["Berlin"]
+    },
+    geometry=[boundary_geometry],
+    crs=config.CRS
 )
 
 boundary.to_file(
@@ -282,5 +362,6 @@ boundary.to_file(
     driver="GPKG"
 )
 
-
-print("Data preparation finished.")
+print(
+    "Data preparation finished."
+)

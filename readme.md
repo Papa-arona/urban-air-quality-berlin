@@ -164,29 +164,4 @@ figures/
 
 ## Repository structure
 
-```text
-Urban-Air-Quality-and-Mobility-Berlin/
-│
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── main.py
-│
-├── python/
-│   ├── config.py
-│   ├── functions.py
-│   ├── 1_prepare_data.py
-│   ├── 2_analysis.py
-│   ├── 3_validation.py
-│   └── 4_export_results.py
-│
-├── data/
-│   ├── README.md
-│   ├── raw/
-│   └── processed/
-│
-├── stations/
-│   └── stations.csv
-│
-└── figures/
-```
+

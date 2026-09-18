@@ -3,12 +3,11 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
-from shapely.geometry import Point
-from shapely.ops import unary_union
-
 import config
 from functions import idw
 
+
+print("Running analysis...")
 
 
 # --------------------------------------------------
@@ -34,6 +33,10 @@ landuse = gpd.read_file(
 
 cams = gpd.read_file(
     config.CAMS_FILE
+).to_crs(config.CRS)
+
+boundary = gpd.read_file(
+    config.BOUNDARY_FILE
 ).to_crs(config.CRS)
 
 
@@ -73,7 +76,7 @@ plt.close()
 
 
 # --------------------------------------------------
-# 2. Station map
+# 2. Monitoring stations
 # --------------------------------------------------
 
 means = (
@@ -84,40 +87,39 @@ means = (
 
 stations = stations.merge(
     means,
-    on="station"
+    on="station_id",
+    how="left"
 )
-
-colors = {
-    "Traffic": "#E5A800",
-    "Urban background": "#E53935",
-    "Outskirts of the City": "#168BD8"
-}
 
 fig, ax = plt.subplots(figsize=(9, 8))
 
+colors = {
+    "Traffic": "orange",
+    "Urban background": "red",
+    "Outskirts of the city": "dodgerblue",
+    "Outskirts of the City": "dodgerblue"
+}
+
 for name, group in stations.groupby("station_type"):
+
     group.plot(
         ax=ax,
         color=colors.get(name, "grey"),
         edgecolor="black",
-        markersize=90,
+        markersize=70,
         label=name
     )
 
-stations.boundary.plot(
+boundary.boundary.plot(
     ax=ax,
-    color="black",
-    linewidth=1.2
+    color="black"
 )
 
 ax.set_title(
     "Berlin NO₂ Monitoring Stations"
 )
 
-ax.legend(
-    title="Station type"
-)
-
+ax.legend()
 ax.set_axis_off()
 
 plt.tight_layout()
@@ -131,115 +133,112 @@ plt.close()
 
 
 # --------------------------------------------------
-# 3. Traffic network and traffic nodes
+# 3. Traffic network
 # --------------------------------------------------
 
+traffic_column = next(
+    c for c in traffic.columns
+    if c.lower() in [
+        "dtv",
+        "dtvw",
+        "traffic_volume",
+        "verkehrsmenge"
+    ]
+)
+
+road_column = next(
+    c for c in traffic.columns
+    if c.lower() in [
+        "highway",
+        "road_type",
+        "strassentyp",
+        "fclass"
+    ]
+)
+
 traffic = traffic[
-    traffic["road_type"].isin(
-        ["motorway", "primary", "tertiary"]
+    traffic[road_column].isin(
+        [
+            "motorway",
+            "primary",
+            "tertiary"
+        ]
     )
 ].copy()
 
-traffic["traffic_class"] = pd.cut(
-    traffic["traffic_volume"],
-    bins=config.TRAFFIC_BINS,
-    labels=config.TRAFFIC_LABELS,
-    include_lowest=True
+traffic[traffic_column] = pd.to_numeric(
+    traffic[traffic_column],
+    errors="coerce"
 )
 
-traffic_colors = [
-    "#3BAF2C",
-    "#5FCF1A",
-    "#8BD417",
-    "#F2B705",
-    "#F5CC3B",
-    "#FF8C00",
-    "#E60000",
-    "#9B1FA8"
+traffic = traffic.dropna(
+    subset=[traffic_column]
+)
+
+
+# Traffic classes
+
+traffic["traffic_class"] = pd.cut(
+    traffic[traffic_column],
+    bins=8
+)
+
+fig, ax = plt.subplots(
+    figsize=(10, 8)
+)
+
+traffic.plot(
+    ax=ax,
+    column="traffic_class",
+    cmap="RdYlGn_r",
+    legend=True,
+    linewidth=1
+)
+
+boundary.boundary.plot(
+    ax=ax,
+    color="black",
+    linewidth=1
+)
+
+# Intersections
+
+intersections = gpd.overlay(
+    traffic[["geometry"]],
+    traffic[["geometry"]],
+    how="intersection"
+)
+
+intersections = intersections[
+    intersections.geometry.geom_type == "Point"
 ]
 
-fig, ax = plt.subplots(figsize=(10, 8))
-
-for class_name, group in traffic.groupby(
-    "traffic_class",
-    observed=False
-):
-
-    group.plot(
-        ax=ax,
-        color=traffic_colors[
-            list(config.TRAFFIC_LABELS).index(
-                class_name
-            )
-        ],
-        linewidth=1,
-        label=class_name
+intersections["Join_Count"] = (
+    intersections.geometry.apply(
+        lambda point: sum(
+            traffic.geometry.intersects(point)
+        )
     )
-
-
-# intersections
-pairs = gpd.sjoin(
-    traffic[["geometry"]],
-    traffic[["geometry"]],
-    predicate="intersects"
 )
 
-points = []
-
-for idx, row in pairs.iterrows():
-
-    other = row["index_right"]
-
-    if idx >= other:
-        continue
-
-    geom = traffic.loc[
-        idx,
-        "geometry"
-    ].intersection(
-        traffic.loc[
-            other,
-            "geometry"
-        ]
-    )
-
-    if geom.geom_type == "Point":
-        points.append(geom)
-
-
-nodes = gpd.GeoDataFrame(
-    geometry=points,
-    crs=traffic.crs
-)
-
-node_counts = gpd.sjoin(
-    nodes,
-    traffic[["geometry"]],
-    predicate="intersects"
-).groupby(
-    level=0
-).size()
-
-nodes["Join_Count"] = node_counts
-
-nodes = nodes[
-    nodes["Join_Count"] >= 5
+nodes = intersections[
+    intersections["Join_Count"] >= 5
 ]
 
 nodes.plot(
     ax=ax,
-    facecolor="white",
+    color="white",
     edgecolor="black",
-    markersize=55
+    markersize=45
+)
+
+nodes.to_file(
+    config.PROCESSED / "traffic_nodes.gpkg",
+    driver="GPKG"
 )
 
 ax.set_title(
     "Berlin Traffic Network and Traffic Nodes"
-)
-
-ax.legend(
-    title="Vehicles per day",
-    loc="upper right"
 )
 
 ax.set_axis_off()
@@ -253,25 +252,38 @@ plt.savefig(
 
 plt.close()
 
-nodes.to_file(
-    config.PROCESSED / "traffic_nodes.gpkg",
-    driver="GPKG"
-)
-
 
 # --------------------------------------------------
 # 4. Land use
 # --------------------------------------------------
 
-fig, ax = plt.subplots(figsize=(10, 8))
+landuse_column = next(
+    c for c in landuse.columns
+    if c.lower() in [
+        "landuse",
+        "land_use",
+        "nutzung",
+        "klasse",
+        "class"
+    ]
+)
+
+fig, ax = plt.subplots(
+    figsize=(10, 8)
+)
 
 landuse.plot(
     ax=ax,
-    column="landuse",
+    column=landuse_column,
     categorical=True,
     legend=True,
     edgecolor="black",
-    linewidth=0.15
+    linewidth=0.1
+)
+
+boundary.boundary.plot(
+    ax=ax,
+    color="black"
 )
 
 ax.set_title(
@@ -291,22 +303,32 @@ plt.close()
 
 
 # --------------------------------------------------
-# 5. IDW NO2 map
+# 5. IDW interpolation
 # --------------------------------------------------
 
 x = stations.geometry.x.to_numpy()
 y = stations.geometry.y.to_numpy()
-values = stations["no2"].to_numpy()
+values = stations["no2"].dropna().to_numpy()
+
+valid = stations["no2"].notna()
+
+x = stations.loc[valid].geometry.x.to_numpy()
+y = stations.loc[valid].geometry.y.to_numpy()
+
+values = stations.loc[
+    valid,
+    "no2"
+].to_numpy()
 
 grid_x, grid_y = np.meshgrid(
     np.linspace(
-        x.min() - 5000,
-        x.max() + 5000,
+        x.min() - 3000,
+        x.max() + 3000,
         200
     ),
     np.linspace(
-        y.min() - 5000,
-        y.max() + 5000,
+        y.min() - 3000,
+        y.max() + 3000,
         200
     )
 )
@@ -319,41 +341,12 @@ grid_z = idw(
     config.IDW_POWER
 )
 
-no2_bins = [
-    0,
-    10.5,
-    12.7,
-    14.8,
-    16.8,
-    20.8,
-    24.8,
-    1000
-]
-
-no2_labels = [
-    "7.1 - 10.5",
-    "10.6 - 12.7",
-    "12.8 - 14.8",
-    "14.9 - 16.8",
-    "16.9 - 20.8",
-    "20.8 - 24.8",
-    ">= 24.9"
-]
-
-grid_class = np.digitize(
-    grid_z,
-    no2_bins
+fig, ax = plt.subplots(
+    figsize=(10, 8)
 )
-
-cmap = plt.get_cmap(
-    "RdYlBu_r",
-    len(no2_labels)
-)
-
-fig, ax = plt.subplots(figsize=(10, 8))
 
 image = ax.imshow(
-    grid_class,
+    grid_z,
     extent=[
         grid_x.min(),
         grid_x.max(),
@@ -361,30 +354,31 @@ image = ax.imshow(
         grid_y.max()
     ],
     origin="lower",
-    cmap=cmap,
-    vmin=1,
-    vmax=len(no2_labels)
+    cmap="RdYlBu_r"
 )
 
 traffic.plot(
     ax=ax,
     color="grey",
-    linewidth=0.25
+    linewidth=0.2
+)
+
+boundary.boundary.plot(
+    ax=ax,
+    color="black",
+    linewidth=1
 )
 
 stations.plot(
     ax=ax,
     color="black",
-    markersize=18
+    markersize=15
 )
 
 plt.colorbar(
     image,
     ax=ax,
-    ticks=np.arange(
-        1,
-        len(no2_labels) + 1
-    )
+    label="NO₂ [µg/m³]"
 )
 
 ax.set_title(
@@ -407,35 +401,38 @@ plt.close()
 # 6. CAMS comparison
 # --------------------------------------------------
 
-cams["no2_class"] = pd.cut(
-    cams["no2"],
-    bins=no2_bins,
-    labels=no2_labels,
-    include_lowest=True
+cams_column = next(
+    c for c in cams.columns
+    if c.lower() in [
+        "no2",
+        "no2_concentration",
+        "nitrogen_dioxide"
+    ]
 )
 
-fig, ax = plt.subplots(figsize=(10, 8))
-
 cams.plot(
-    ax=ax,
-    column="no2_class",
-    categorical=True,
+    column=cams_column,
+    cmap="RdYlBu_r",
     legend=True,
-    edgecolor="none"
+    figsize=(10, 8)
+)
+
+boundary.boundary.plot(
+    ax=plt.gca(),
+    color="black"
 )
 
 traffic.plot(
-    ax=ax,
+    ax=plt.gca(),
     color="grey",
-    linewidth=0.25
+    linewidth=0.2
 )
 
-ax.set_title(
+plt.title(
     "CAMS NO₂ Spatial Distribution"
 )
 
-ax.set_axis_off()
-
+plt.axis("off")
 plt.tight_layout()
 
 plt.savefig(
@@ -446,4 +443,4 @@ plt.savefig(
 plt.close()
 
 
-print("step 2 done")
+print("step 2 is done.")

@@ -40,11 +40,6 @@ Verkehrsmengen DTV 2019 (Umweltatlas) - WFS
 
 https://daten.berlin.de/datensaetze/verkehrsmengen-dtv-2019-umweltatlas-wfs-50921da5
 
-Place the downloaded data in:
-
-```text
-data/raw/traffic.gpkg
-```
 
 ## 4. Land-use data
 
@@ -56,11 +51,6 @@ Flächennutzung (Umweltatlas) - ab 2021 - WFS
 
 https://daten.berlin.de/datensaetze/flachennutzung-umweltatlas-ab-2021-wfs-80589f72
 
-Place the downloaded data in:
-
-```text
-data/raw/landuse.gpkg
-```
 
 ## 5. CAMS data
 
@@ -73,11 +63,7 @@ CAMS European air quality reanalyses
 
 https://ads.atmosphere.copernicus.eu/datasets/cams-europe-air-quality-reanalyses
 
-Place the prepared spatial dataset in:
 
-```text
-data/raw/cams.gpkg
-```
 
 ## 6. Berlin boundary
 
@@ -87,10 +73,6 @@ The boundary can be obtained from the Berlin Geoportal / Environmental
 Atlas geodata services.
 
 Place the dataset in:
-
-```text
-data/raw/berlin_boundary.gpkg
-```
 
 ## Input structure
 

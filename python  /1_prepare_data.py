@@ -10,11 +10,13 @@ import config
 from functions import clean_numeric
 
 
-print("prep data...")
+print("Preparing data...")
 
-# NO2
+
+# NO2 data
+
 df = pd.read_csv(
-    config.NO2_FILE,
+    config.NO2_URL,
     sep=";",
     encoding="utf-8"
 )
@@ -67,53 +69,59 @@ df.to_csv(
     index=False
 )
 
+df.to_csv(
+    config.NO2_FILE,
+    index=False
+)
+
 
 # Station coordinates
-if not config.STATIONS_GEOJSON.exists():
 
-    print("geocoding stations...")
+print("Geocoding stations...")
 
-    geolocator = Nominatim(
-        user_agent="berlin-no2-project"
+geolocator = Nominatim(
+    user_agent="berlin-no2-project"
+)
+
+lat = []
+lon = []
+
+for _, row in stations.iterrows():
+
+    address = row["station"] + ", Berlin, Germany"
+
+    location = geolocator.geocode(
+        address
     )
 
-    lat = []
-    lon = []
+    if location:
+        lat.append(location.latitude)
+        lon.append(location.longitude)
+    else:
+        lat.append(None)
+        lon.append(None)
 
-    for station in stations["station"]:
+    time.sleep(1)
 
-        location = geolocator.geocode(
-            f"{station}, Berlin, Germany"
-        )
+stations["latitude"] = lat
+stations["longitude"] = lon
 
-        if location:
-            lat.append(location.latitude)
-            lon.append(location.longitude)
-        else:
-            lat.append(None)
-            lon.append(None)
+stations = stations.dropna(
+    subset=["latitude", "longitude"]
+)
 
-        time.sleep(1)
+geo = gpd.GeoDataFrame(
+    stations,
+    geometry=gpd.points_from_xy(
+        stations["longitude"],
+        stations["latitude"]
+    ),
+    crs="EPSG:4326"
+)
 
-    stations["latitude"] = lat
-    stations["longitude"] = lon
+geo.to_file(
+    config.STATIONS_GEOJSON,
+    driver="GeoJSON"
+)
 
-    stations = stations.dropna(
-        subset=["latitude", "longitude"]
-    )
-
-    geo = gpd.GeoDataFrame(
-        stations,
-        geometry=gpd.points_from_xy(
-            stations["longitude"],
-            stations["latitude"]
-        ),
-        crs="EPSG:4326"
-    )
-
-    geo.to_file(
-        config.STATIONS_GEOJSON,
-        driver="GeoJSON"
-    )
-
-print("step 1 finished.")
+print("Step 1 done.")

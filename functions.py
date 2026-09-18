@@ -1,52 +1,156 @@
-# ============================================================
-# FUNCTIONS
-# ============================================================
-
 import numpy as np
 import pandas as pd
 
+from scipy.spatial import cKDTree
 
-def calculate_hourly_profile(data):
+
+def find_datetime_column(dataframe):
     """
-    Calculate mean NO2 concentration by hour and station type.
+    Identify the datetime column in the NO2 dataset.
+    """
+
+    preferred_names = [
+        "Messzeit",
+        "Datum",
+        "date",
+        "datetime",
+        "timestamp"
+    ]
+
+    for column in preferred_names:
+
+        if column in dataframe.columns:
+            return column
+
+    return dataframe.columns[0]
+
+
+def clean_numeric(series):
+    """
+    Convert measurement values to numeric values.
+    """
+
+    values = (
+        series
+        .astype(str)
+        .str.replace(",", ".", regex=False)
+        .str.strip()
+    )
+
+    return pd.to_numeric(
+        values,
+        errors="coerce"
+    )
+
+
+def calculate_station_means(dataframe):
+    """
+    Calculate mean NO2 concentration per station.
     """
 
     return (
-        data
+        dataframe
+        .groupby("station")["no2"]
+        .mean()
+        .reset_index()
+    )
+
+
+def calculate_hourly_profile(dataframe):
+    """
+    Calculate average NO2 concentration by station type
+    and hour of day.
+    """
+
+    return (
+        dataframe
         .groupby(
-            ["station_type", "hour"]
+            [
+                "station_type",
+                "hour"
+            ]
         )["no2"]
         .mean()
         .reset_index()
     )
 
 
-def calculate_daily_mean(data):
+def idw(
+    points,
+    values,
+    grid_x,
+    grid_y,
+    power=2
+):
     """
-    Calculate daily mean NO2 concentration.
+    Perform inverse distance weighting.
     """
 
-    return (
-        data
-        .groupby(
-            ["station", "date"]
-        )["no2"]
-        .mean()
-        .reset_index()
+    tree = cKDTree(points)
+
+    grid_points = np.column_stack(
+        [
+            grid_x.ravel(),
+            grid_y.ravel()
+        ]
+    )
+
+    distances, indices = tree.query(
+        grid_points,
+        k=len(points)
+    )
+
+    distances = np.maximum(
+        distances,
+        1e-12
+    )
+
+    weights = 1 / distances**power
+
+    result = (
+        np.sum(
+            weights * values[indices],
+            axis=1
+        )
+        /
+        np.sum(
+            weights,
+            axis=1
+        )
+    )
+
+    return result.reshape(
+        grid_x.shape
     )
 
 
-def calculate_r_squared(observed, predicted):
+def regression_statistics(
+    dataframe,
+    x_column,
+    y_column
+):
     """
-    Calculate R-squared between observed and predicted values.
+    Calculate linear regression statistics.
     """
 
-    observed = np.asarray(observed)
-    predicted = np.asarray(predicted)
+    from scipy.stats import linregress
 
-    correlation = np.corrcoef(
-        observed,
-        predicted
-    )[0, 1]
+    clean = dataframe[
+        [
+            x_column,
+            y_column
+        ]
+    ].dropna()
 
-    return correlation ** 2
+    result = linregress(
+        clean[x_column],
+        clean[y_column]
+    )
+
+    return {
+        "n": len(clean),
+        "slope": result.slope,
+        "intercept": result.intercept,
+        "r_squared": result.rvalue ** 2,
+        "p_value": result.pvalue
+    }

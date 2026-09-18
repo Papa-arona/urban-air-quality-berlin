@@ -1,7 +1,8 @@
 # Urban Air Quality and Mobility in Berlin
 
-This project analyses nitrogen dioxide (NO₂) concentrations across Berlin and
-examines their relationship with road traffic and urban land use.
+This project analyses the spatial distribution of nitrogen dioxide (NO₂)
+concentrations across Berlin and examines its relationship with road traffic
+and urban land use.
 
 The analysis is implemented as a small Python workflow with separate steps
 for data preparation, analysis, validation and export.
@@ -29,41 +30,22 @@ Results
 The hourly NO₂ measurements are obtained automatically from the Berlin
 air-quality monitoring network.
 
-The additional spatial datasets used in the analysis are not included in
-this repository.
-
-Before running the project, download the required datasets and place them
-in:
+Station information used by the analysis is stored in:
 
 ```text
-data/raw/
+data/raw/stations.csv
 ```
 
-See `data/README.md` for the source of each dataset and the required
-filename.
-
-The expected input structure is:
-
-```text
-data/
-└── raw/
-    ├── traffic.gpkg
-    ├── landuse.gpkg
-    ├── cams.gpkg
-    └── berlin_boundary.gpkg
-```
-
-The NO₂ measurements are downloaded automatically by the first step.
-
-## Installation
-
-Install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
+The additional spatial datasets are downloaded separately. See
+`data/README.md` for the required sources and file locations.
 
 ## Run the project
+
+Install the required Python packages:
+
+```bash
+pip install pandas numpy scipy matplotlib geopandas shapely pyproj geopy requests beautifulsoup4
+```
 
 Run the complete workflow with:
 
@@ -98,8 +80,8 @@ This step:
 - reshapes the station data
 - cleans the measurements
 - adds temporal information
-- prepares the monitoring stations
-- geocodes the stations
+- combines the measurements with the station information
+- creates the station spatial layer
 
 Outputs:
 
@@ -123,12 +105,52 @@ It produces:
 - the IDW NO₂ interpolation
 - the CAMS comparison
 
+### Monitoring Stations
+
+<img width="1448" height="1086" alt="Monitoring stations" src="https://github.com/user-attachments/assets/fce7da44-c494-4b6a-8111-b1e41e885d37" />
+
+### Diurnal NO₂ Pattern
+
+This figure compares average NO₂ concentrations throughout the day across
+the monitoring-station categories.
+
+<img width="662" height="410" alt="Diurnal NO₂ pattern" src="https://github.com/user-attachments/assets/12a493af-bcd5-46f1-96d2-f4389f6e073a" />
+
+### Traffic Network
+
+Average daily traffic volumes are analysed across Berlin's road network.
+Traffic measurement nodes are used to connect traffic intensity with the
+NO₂ results.
+
+<img width="1448" height="1086" alt="Traffic network" src="https://github.com/user-attachments/assets/684dfdf7-9c44-4ab5-9c25-828dd829e79e" />
+
+### Land Use
+
+Land-use information provides spatial context for the distribution of
+NO₂ across Berlin.
+
+<img width="1448" height="1086" alt="Land use" src="https://github.com/user-attachments/assets/edb09b58-9aba-407b-9383-8b32463c5633" />
+
+### Spatial Distribution of NO₂
+
+Inverse Distance Weighting (IDW) is used to transform the monitoring-station
+measurements into a continuous NO₂ concentration surface.
+
+<img width="1448" height="1086" alt="NO₂ spatial distribution" src="https://github.com/user-attachments/assets/30262b83-6c42-4892-a558-b7f5ebcabc2b" />
+
+### CAMS Comparison
+
+The interpolated NO₂ surface is compared with the gridded CAMS product using
+the same concentration classes.
+
+<img width="1448" height="1086" alt="CAMS comparison" src="https://github.com/user-attachments/assets/91a101a9-64e4-412f-8e63-b356d1d3b655" />
+
 ## 3. Validation
 
 `python/3_validation.py`
 
-The traffic information is compared with the NO₂ spatial classes produced
-from the interpolation.
+The traffic information is compared with the NO₂ concentration classes
+obtained from the spatial analysis.
 
 The script calculates:
 
@@ -143,6 +165,12 @@ Output:
 ```text
 data/processed/validation_results.csv
 ```
+
+### Traffic and NO₂
+
+The analysed relationship produced an R² of approximately 0.836.
+
+<img width="619" height="488" alt="Traffic and NO₂ relationship" src="https://github.com/user-attachments/assets/51d5b61e-b689-40b1-a240-5f715fe0a52b" />
 
 ## 4. Export
 
@@ -163,6 +191,8 @@ figures/
 ```
 
 ## Repository structure
+
+```text
 Urban-Air-Quality-and-Mobility-Berlin/
 │
 ├── README.md
@@ -189,5 +219,4 @@ Urban-Air-Quality-and-Mobility-Berlin/
     ├── 05_no2_idw.png
     ├── 06_cams_comparison.png
     └── 07_traffic_no2_validation.png
-
-
+```

@@ -123,30 +123,6 @@ It produces:
 - the IDW NO₂ interpolation
 - the CAMS comparison
 
-### Diurnal NO₂ cycle
-
-![Diurnal NO₂ cycle](figures/01_diurnal_no2.png)
-
-### Monitoring stations
-
-![Monitoring stations](figures/02_station_map.png)
-
-### Traffic network
-
-![Traffic network](figures/03_traffic_network.png)
-
-### Land use
-
-![Land use](figures/04_landuse.png)
-
-### NO₂ spatial distribution
-
-![NO₂ spatial distribution](figures/05_no2_idw.png)
-
-### CAMS comparison
-
-![CAMS comparison](figures/06_cams_comparison.png)
-
 ## 3. Validation
 
 `python/3_validation.py`
@@ -167,10 +143,6 @@ Output:
 ```text
 data/processed/validation_results.csv
 ```
-
-### Traffic and NO₂
-
-![Traffic and NO₂](figures/07_traffic_no2_validation.png)
 
 ## 4. Export
 
@@ -218,21 +190,3 @@ Urban-Air-Quality-and-Mobility-Berlin/
 │
 └── figures/
 ```
-
-## Results
-
-The complete workflow produces the following main results:
-
-```text
-01_diurnal_no2.png
-02_station_map.png
-03_traffic_network.png
-04_landuse.png
-05_no2_idw.png
-06_cams_comparison.png
-07_traffic_no2_validation.png
-```
-
-The project is organised so that the reader can download the required
-datasets, place them in `data/raw/`, run `python main.py` and reproduce the
-analysis outputs.

@@ -4,7 +4,7 @@ This project analyses the spatial distribution of nitrogen dioxide (NO₂) acros
 
 ## Study Context
 
-Air pollution is an important environmental and public health issue in urban areas, where population density, transport, energy use and other human activities can create strong spatial differences in air quality. Nitrogen dioxide (NO₂) is particularly relevant in cities because it is associated with combustion processes and is strongly influenced by road traffic, especially in areas with high traffic intensity.
+Air pollution is an important environmental and public health issue in urban areas. Nitrogen dioxide (NO₂) is particularly relevant in cities because it is associated with combustion processes and is strongly influenced by road traffic, especially in areas with high traffic intensity.
 
 Berlin provides a useful case study because of its heterogeneous urban structure and the spatial variation in traffic intensity, land use and environmental conditions. NO₂ is monitored across the city through the Berlin Air Quality Monitoring Network (BLUME), providing station based measurements that can be analysed using GIS methods.
 
@@ -50,7 +50,7 @@ Annual mean NO₂ concentrations from 2025 are used as the input for the IDW int
 
 Traffic intensity is represented by average daily vehicle volumes from the Berlin traffic volume dataset from 2019. The traffic data are used as a proxy for potential traffic related emission pressure rather than as a direct measurement of NO₂ emissions.
 
-Traffic nodes were added to the map to provide additional spatial context. They were created by identifying intersections between major road categories, including motorways, primary roads and secondary roads. These nodes highlight locations where major roads meet and where traffic interactions and potential congestion are more likely to occur. They do not represent measured NO₂ emissions or measured congestion.
+Traffic nodes were created by identifying intersections between major road categories, including motorways, primary roads and secondary roads. These nodes highlight locations where traffic interactions and potential congestion are more likely to occur. They do not represent measured NO₂ emissions or measured congestion.
 
 The traffic dataset represents 2019 conditions, while the NO₂ analysis is based on 2025 measurements. The two datasets therefore do not represent exactly the same period.
 

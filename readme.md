@@ -104,12 +104,10 @@ Shows the main land use and land cover categories across Berlin and provides spa
 
 ### Spatial Distribution of NO₂
 
-![Spatial Distribution of NO₂](figures/05_no2_idw.png)
-
-Shows the annual 2025 NO₂ distribution interpolated from BLUME monitoring stations using Inverse Distance Weighting (IDW).
+Shows the annual 2025 NO₂ distribution interpolated from BLUME monitoring stations using Inverse Distance Weighting (IDW). IDW is a method used to estimate unknown values at specific locations by calculating a weighted average of surrounding known data points.It was executed applying a standard power parameter (p) of 2, and setting the radius maximum to 15 neighbours.
 
 ![Spatial Distribution of NO₂](figures/05_no2_idw.png)
-The resulting spatial distribution reveals a distinct concentric pattern, with higher NO₂ concentrations concentrated in the central districts and gradually decreasing towards the peripheral areas of Berlin. The highest concentrations range from 20.8 to over 24.9 µg/m³ and are mainly concentrated in the central part of the city. In contrast, the lowest concentrations range from 7.1 to 12.7 µg/m³ and are predominantly found towards the outer fringes of Berlin and in greener areas.
+
 
 ### Traffic and NO₂ Validation
 

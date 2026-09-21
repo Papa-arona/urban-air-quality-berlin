@@ -80,7 +80,7 @@ The workflow consists of:
 
 ### Diurnal NO₂ Pattern
 
-Shows the daily variation of NO₂ concentrations for different monitoring station categories.
+Shows the daily variation of NO₂ concentrations for different monitoring station types. On 5 May 2025, a typical weekday, traffic stations recorded the highest concentrations, with a pronounced peak during the morning rush hour, while urban background and outskirts stations followed a similar but notably lower pattern throughout the day. This comparison illustrates how the location and surrounding environment of a monitoring station can influence the NO₂ concentrations measured at that site, with stations located close to traffic capturing stronger local pollution signals.
 
 ![Diurnal NO₂ Pattern](figures/01_diurnal_no2.png)
 
@@ -104,15 +104,20 @@ Shows the main land use and land cover categories across Berlin and provides spa
 
 ### Spatial Distribution of NO₂
 
+![Spatial Distribution of NO₂](figures/05_no2_idw.png)
+
 Shows the annual 2025 NO₂ distribution interpolated from BLUME monitoring stations using Inverse Distance Weighting (IDW).
 
 ![Spatial Distribution of NO₂](figures/05_no2_idw.png)
+The resulting spatial distribution reveals a distinct concentric pattern, with higher NO₂ concentrations concentrated in the central districts and gradually decreasing towards the peripheral areas of Berlin. The highest concentrations range from 20.8 to over 24.9 µg/m³ and are mainly concentrated in the central part of the city. In contrast, the lowest concentrations range from 7.1 to 12.7 µg/m³ and are predominantly found towards the outer fringes of Berlin and in greener areas.
 
 ### Traffic and NO₂ Validation
 
 Shows the relationship between NO₂ concentration classes and estimated average daily traffic.
 
 ![Traffic and NO₂ Validation](figures/07_traffic_no2_validation.png)
+To validate the extent to which road traffic explains these observed spatial patterns, the interpolated
+NO2 layers were correlated against the estimated average daily traffic volume.
 
 ## Interpretation
 
@@ -120,7 +125,7 @@ The spatial analysis identifies higher NO₂ concentrations in central and inner
 
 The traffic analysis shows that areas associated with higher NO₂ concentration classes also tend to have higher estimated average daily traffic. The validation analysis reports an R² value of 0.836 for the relationship between NO₂ concentration classes and estimated traffic volume.
 
-This relationship should be interpreted as an association between spatial traffic intensity and interpolated NO₂ concentrations rather than as evidence that traffic alone determines the observed concentrations. Other factors can influence NO₂ distribution, including residential and commercial heating, industrial activity, urban form, street geometry, vegetation and atmospheric conditions.
+This relationship should be interpreted as an association between spatial traffic intensity and interpolated NO₂ concentrations rather than as evidence that traffic alone determines the observed concentrations. Other factors influence NO₂ distribution, including residential and commercial heating, industrial activity, urban form, street geometry, vegetation and atmospheric conditions.
 
 ## Limitations
 
@@ -131,6 +136,7 @@ The use of 2019 traffic data alongside 2025 NO₂ measurements introduces a temp
 The traffic dataset represents potential traffic related emission pressure and does not directly measure the amount of NO₂ emitted or the actual contribution of traffic at each location.
 
 The analysis also does not incorporate meteorological variables such as wind speed or temperature inversions, which can influence pollutant dispersion and short term pollution variability.
+A comparative analysis between our IDW interpolated ground data and the CAMS satellite based can also be conducted to reveals insights into the scale and precision of air quality monitoring stations.
 
 ## Repository Structure
 
